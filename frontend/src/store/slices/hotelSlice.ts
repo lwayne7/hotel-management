@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { hotelApi } from '../../services/api';
 
 export type HotelStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'offline';
@@ -150,11 +150,12 @@ const hotelSlice = createSlice({
       })
       .addCase(fetchMyHotels.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.hotels = action.payload.data;
+        const payload = action.payload as unknown as { data: Hotel[]; page: number; pageSize: number; total: number };
+        state.hotels = payload.data;
         state.pagination = {
-          page: action.payload.page,
-          pageSize: action.payload.pageSize,
-          total: action.payload.total,
+          page: payload.page,
+          pageSize: payload.pageSize,
+          total: payload.total,
         };
       })
       .addCase(fetchMyHotels.rejected, (state, action) => {
@@ -168,7 +169,7 @@ const hotelSlice = createSlice({
       })
       .addCase(fetchHotelById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentHotel = action.payload;
+        state.currentHotel = action.payload as unknown as Hotel;
       })
       .addCase(fetchHotelById.rejected, (state, action) => {
         state.isLoading = false;
@@ -181,7 +182,7 @@ const hotelSlice = createSlice({
       })
       .addCase(createHotel.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.hotels.unshift(action.payload);
+        state.hotels.unshift(action.payload as unknown as Hotel);
       })
       .addCase(createHotel.rejected, (state, action) => {
         state.isLoading = false;
@@ -190,17 +191,19 @@ const hotelSlice = createSlice({
       // Update hotel
       .addCase(updateHotel.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.hotels.findIndex((h) => h.id === action.payload.id);
+        const hotel = action.payload as unknown as Hotel;
+        const index = state.hotels.findIndex((h) => h.id === hotel.id);
         if (index !== -1) {
-          state.hotels[index] = action.payload;
+          state.hotels[index] = hotel;
         }
-        state.currentHotel = action.payload;
+        state.currentHotel = hotel;
       })
       // Submit for review
       .addCase(submitForReview.fulfilled, (state, action) => {
-        const index = state.hotels.findIndex((h) => h.id === action.payload.id);
+        const hotel = action.payload as unknown as Hotel;
+        const index = state.hotels.findIndex((h) => h.id === hotel.id);
         if (index !== -1) {
-          state.hotels[index] = action.payload;
+          state.hotels[index] = hotel;
         }
       });
   },

@@ -9,8 +9,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { RoomType } from './room-type.entity';
-import { HotelImage } from './hotel-image.entity';
 
 export enum HotelStatus {
   DRAFT = 'draft',           // 草稿
@@ -60,7 +58,7 @@ export class Hotel {
   status: HotelStatus;
 
   @Column({ type: 'text', nullable: true })
-  rejectReason: string;
+  rejectReason: string | null;
 
   @Column()
   merchantId: number;
@@ -69,11 +67,11 @@ export class Hotel {
   @JoinColumn({ name: 'merchantId' })
   merchant: User;
 
-  @OneToMany(() => RoomType, (roomType) => roomType.hotel, { cascade: true })
-  roomTypes: RoomType[];
+  @OneToMany('RoomType', 'hotel', { cascade: true })
+  roomTypes: any[];
 
-  @OneToMany(() => HotelImage, (image) => image.hotel, { cascade: true })
-  images: HotelImage[];
+  @OneToMany('HotelImage', 'hotel', { cascade: true })
+  images: any[];
 
   @CreateDateColumn()
   createdAt: Date;

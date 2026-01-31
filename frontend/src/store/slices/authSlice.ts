@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { authApi, LoginParams, RegisterParams } from '../../services/api';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { authApi, type LoginParams, type RegisterParams, type AuthResponse } from '../../services/api';
 
 export type UserRole = 'merchant' | 'admin';
 
@@ -78,8 +78,9 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user as User;
-        state.token = action.payload.access_token;
+        const payload = action.payload as AuthResponse;
+        state.user = payload.user as User;
+        state.token = payload.access_token;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -92,8 +93,9 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user as User;
-        state.token = action.payload.access_token;
+        const payload = action.payload as AuthResponse;
+        state.user = payload.user as User;
+        state.token = payload.access_token;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;

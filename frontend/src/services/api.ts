@@ -24,7 +24,7 @@ api.interceptors.request.use(
   }
 );
 
-// 响应拦截器：处理错误
+// 响应拦截器：处理错误，返回 data
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
@@ -51,9 +51,20 @@ export interface RegisterParams {
   phone?: string;
 }
 
+export interface AuthResponse {
+  user: {
+    id: number;
+    username: string;
+    role: 'merchant' | 'admin';
+    nickname?: string;
+    phone?: string;
+  };
+  access_token: string;
+}
+
 export const authApi = {
-  login: (params: LoginParams) => api.post('/auth/login', params),
-  register: (params: RegisterParams) => api.post('/auth/register', params),
+  login: (params: LoginParams): Promise<AuthResponse> => api.post('/auth/login', params),
+  register: (params: RegisterParams): Promise<AuthResponse> => api.post('/auth/register', params),
 };
 
 // 酒店相关 API

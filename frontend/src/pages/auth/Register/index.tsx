@@ -3,7 +3,9 @@ import { Form, Input, Button, Card, message, Typography, Radio } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
-import { register, clearError, UserRole } from '../../../store/slices/authSlice';
+import { register, clearError } from '../../../store/slices/authSlice';
+import type { UserRole } from '../../../store/slices/authSlice';
+import type { AuthResponse } from '../../../services/api';
 import '../Login/auth.css';
 
 const { Title, Text } = Typography;
@@ -35,7 +37,8 @@ const Register: React.FC = () => {
     const result = await dispatch(register(registerData));
     if (register.fulfilled.match(result)) {
       message.success('注册成功');
-      const user = result.payload.user;
+      const payload = result.payload as AuthResponse;
+      const user = payload.user;
       if (user.role === 'merchant') {
         navigate('/merchant/hotels');
       } else if (user.role === 'admin') {

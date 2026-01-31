@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { login, clearError } from '../../../store/slices/authSlice';
+import type { AuthResponse } from '../../../services/api';
 import './auth.css';
 
 const { Title, Text } = Typography;
@@ -28,7 +29,8 @@ const Login: React.FC = () => {
     const result = await dispatch(login(values));
     if (login.fulfilled.match(result)) {
       message.success('登录成功');
-      const user = result.payload.user;
+      const payload = result.payload as AuthResponse;
+      const user = payload.user;
       // 根据角色跳转
       if (user.role === 'merchant') {
         navigate('/merchant/hotels');

@@ -5,6 +5,7 @@ import {
   IsInt,
   IsArray,
   IsDateString,
+  IsEnum,
   Min,
   Max,
   MaxLength,
@@ -12,6 +13,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { DiscountType } from '../entities/room-type.entity';
 
 class CreateRoomTypeDto {
   @ApiProperty({ description: '房型名称', example: '豪华大床房' })
@@ -31,10 +33,10 @@ class CreateRoomTypeDto {
   @Min(0)
   originalPrice?: number;
 
-  @ApiPropertyOptional({ description: '折扣类型', example: 'percentage' })
+  @ApiPropertyOptional({ description: '折扣类型', enum: DiscountType, example: DiscountType.PERCENTAGE })
   @IsOptional()
-  @IsString()
-  discountType?: string;
+  @IsEnum(DiscountType)
+  discountType?: DiscountType;
 
   @ApiPropertyOptional({ description: '折扣值', example: 80 })
   @IsOptional()
