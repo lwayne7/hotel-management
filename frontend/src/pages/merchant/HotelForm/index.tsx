@@ -14,7 +14,6 @@ import {
   message,
   InputNumber,
   Select,
-  Tag,
 } from 'antd';
 import {
   PlusOutlined,
@@ -28,7 +27,7 @@ import { hotelApi } from '../../../services/api';
 import dayjs from 'dayjs';
 import './index.css';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { TextArea } = Input;
 
 const discountTypeOptions = [
@@ -47,7 +46,6 @@ const HotelForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
 
@@ -61,7 +59,6 @@ const HotelForm: React.FC = () => {
 
   const loadHotel = async (hotelId: number) => {
     try {
-      setLoading(true);
       const hotel = await hotelApi.getHotelById(hotelId);
       
       // 检查是否只读（非草稿和驳回状态）
@@ -79,8 +76,6 @@ const HotelForm: React.FC = () => {
       });
     } catch (error: any) {
       message.error(error.response?.data?.message || '加载酒店信息失败');
-    } finally {
-      setLoading(false);
     }
   };
 

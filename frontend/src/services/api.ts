@@ -67,25 +67,43 @@ export const authApi = {
   register: (params: RegisterParams): Promise<AuthResponse> => api.post('/auth/register', params),
 };
 
+// 酒店类型
+export interface Hotel {
+  id: number;
+  nameCn: string;
+  nameEn?: string;
+  address: string;
+  starRating: number;
+  openingDate?: string;
+  description?: string;
+  facilities?: string[];
+  nearbyAttractions?: string[];
+  transportation?: string[];
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'offline';
+  rejectReason?: string;
+  roomTypes?: any[];
+  images?: any[];
+}
+
 // 酒店相关 API
 export const hotelApi = {
   // 商户端
-  getMyHotels: (params?: { page?: number; status?: string }) =>
+  getMyHotels: (params?: { page?: number; status?: string }): Promise<{ data: Hotel[]; page: number; pageSize: number; total: number }> =>
     api.get('/hotels/my', { params }),
-  getHotelById: (id: number) => api.get(`/hotels/${id}`),
-  createHotel: (data: any) => api.post('/hotels', data),
-  updateHotel: (id: number, data: any) => api.patch(`/hotels/${id}`, data),
-  deleteHotel: (id: number) => api.delete(`/hotels/${id}`),
-  submitForReview: (id: number) => api.post(`/hotels/${id}/submit`),
+  getHotelById: (id: number): Promise<Hotel> => api.get(`/hotels/${id}`),
+  createHotel: (data: any): Promise<Hotel> => api.post('/hotels', data),
+  updateHotel: (id: number, data: any): Promise<Hotel> => api.patch(`/hotels/${id}`, data),
+  deleteHotel: (id: number): Promise<void> => api.delete(`/hotels/${id}`),
+  submitForReview: (id: number): Promise<Hotel> => api.post(`/hotels/${id}/submit`),
 
   // 管理员端
-  getPendingHotels: (params?: { page?: number; status?: string }) =>
+  getPendingHotels: (params?: { page?: number; status?: string }): Promise<{ data: Hotel[]; page: number; pageSize: number; total: number }> =>
     api.get('/admin/hotels', { params }),
-  approveHotel: (id: number) => api.post(`/admin/hotels/${id}/approve`),
-  rejectHotel: (id: number, reason: string) =>
+  approveHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/approve`),
+  rejectHotel: (id: number, reason: string): Promise<Hotel> =>
     api.post(`/admin/hotels/${id}/reject`, { reason }),
-  offlineHotel: (id: number) => api.post(`/admin/hotels/${id}/offline`),
-  onlineHotel: (id: number) => api.post(`/admin/hotels/${id}/online`),
+  offlineHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/offline`),
+  onlineHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/online`),
 };
 
 // 上传相关 API
