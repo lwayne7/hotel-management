@@ -41,18 +41,18 @@ export class Hotel {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   facilities: string[];
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   nearbyAttractions: string[];
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   transportation: string[];
 
   @Column({
-    type: 'enum',
-    enum: HotelStatus,
+    type: 'varchar',
+    length: 20,
     default: HotelStatus.DRAFT,
   })
   status: HotelStatus;

@@ -20,17 +20,31 @@ import { AdminModule } from './admin/admin.module';
     // 数据库模块
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('database.host'),
-        port: configService.get('database.port'),
-        username: configService.get('database.username'),
-        password: configService.get('database.password'),
-        database: configService.get('database.database'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('database.synchronize'),
-        logging: configService.get('database.logging'),
-      }),
+      useFactory: (configService: ConfigService) => {
+        const dbType = configService.get('database.type');
+        
+        if (dbType === 'better-sqlite3') {
+          return {
+            type: 'better-sqlite3',
+            database: configService.get('database.database'),
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: configService.get('database.synchronize'),
+            logging: configService.get('database.logging'),
+          };
+        }
+        
+        return {
+          type: 'postgres',
+          host: configService.get('database.host'),
+          port: configService.get('database.port'),
+          username: configService.get('database.username'),
+          password: configService.get('database.password'),
+          database: configService.get('database.database'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: configService.get('database.synchronize'),
+          logging: configService.get('database.logging'),
+        };
+      },
       inject: [ConfigService],
     }),
     // 业务模块

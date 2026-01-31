@@ -29,8 +29,8 @@ export class RoomType {
   originalPrice: number;
 
   @Column({
-    type: 'enum',
-    enum: DiscountType,
+    type: 'varchar',
+    length: 20,
     default: DiscountType.NONE,
   })
   discountType: DiscountType;
@@ -50,7 +50,7 @@ export class RoomType {
   @Column({ type: 'int', nullable: true })
   roomSize: number;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   amenities: string[];
 
   @Column()
