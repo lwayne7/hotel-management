@@ -28,10 +28,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const requestUrl: string = error.config?.url || '';
+    const isLoginOrRegister =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+
+    // 登录/注册失败时不要强制跳转，否则看不到错误提示
+    if (status === 401 && !isLoginOrRegister) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
