@@ -6,6 +6,8 @@ import { AppService } from './app.service';
 import { databaseConfig } from './config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { HotelsModule } from './hotels/hotels.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { UsersModule } from './users/users.module';
     // 业务模块
     AuthModule,
     UsersModule,
+    HotelsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
