@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -65,10 +66,36 @@ export class HotelsController {
     );
   }
 
+  @Get()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MERCHANT)
+  @ApiOperation({ summary: '获取我的酒店列表（商户）' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: HotelStatus })
+  async listMyHotels(
+    @CurrentUser() user: { id: number },
+    @Query('page') page?: number,
+    @Query('pageSize') pageSize?: number,
+    @Query('status') status?: HotelStatus,
+  ) {
+    return this.hotelsService.findByMerchant(
+      user.id,
+      page || 1,
+      pageSize || 10,
+      status,
+    );
+  }
+
   @Get(':id')
-  @ApiOperation({ summary: '获取酒店详情' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.hotelsService.findOne(id);
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MERCHANT)
+  @ApiOperation({ summary: '获取酒店详情（商户）' })
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { id: number },
+  ) {
+    return this.hotelsService.findOneForMerchant(id, user.id);
   }
 
   @Patch(':id')
@@ -76,6 +103,18 @@ export class HotelsController {
   @Roles(UserRole.MERCHANT)
   @ApiOperation({ summary: '更新酒店信息（商户）' })
   async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateHotelDto: UpdateHotelDto,
+    @CurrentUser() user: { id: number },
+  ) {
+    return this.hotelsService.update(id, updateHotelDto, user.id);
+  }
+
+  @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MERCHANT)
+  @ApiOperation({ summary: '更新酒店信息（商户）' })
+  async replace(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateHotelDto: UpdateHotelDto,
     @CurrentUser() user: { id: number },

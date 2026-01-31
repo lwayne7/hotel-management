@@ -128,6 +128,13 @@ const MerchantHotels: React.FC = () => {
       ),
     },
     {
+      title: '创建时间',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 180,
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm'),
+    },
+    {
       title: '更新时间',
       dataIndex: 'updatedAt',
       key: 'updatedAt',

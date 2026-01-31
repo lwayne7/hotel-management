@@ -1,7 +1,9 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto';
+import { CurrentUser } from './decorators';
 
 @ApiTags('认证')
 @Controller('auth')
@@ -23,5 +25,13 @@ export class AuthController {
   @ApiResponse({ status: 401, description: '用户名或密码错误' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Get('profile')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取当前用户信息' })
+  async profile(@CurrentUser() user: { id: number }) {
+    return this.authService.validateUser(user.id);
   }
 }

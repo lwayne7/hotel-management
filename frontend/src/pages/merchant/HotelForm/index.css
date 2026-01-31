@@ -34,3 +34,22 @@
 .remove-btn:hover {
   color: #ff7875;
 }
+
+.image-item {
+  position: relative;
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  color: #999;
+  border-radius: 4px;
+}

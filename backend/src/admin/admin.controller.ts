@@ -20,6 +20,7 @@ import { Roles } from '../auth/decorators';
 import { RolesGuard } from '../auth/guards';
 import { UserRole } from '../users/entities/user.entity';
 import { HotelStatus } from '../hotels/entities/hotel.entity';
+import { RejectHotelDto } from './dto';
 
 @ApiTags('审核')
 @Controller('admin')
@@ -58,9 +59,9 @@ export class AdminController {
   @ApiOperation({ summary: '审核驳回' })
   async reject(
     @Param('id', ParseIntPipe) id: number,
-    @Body('reason') reason: string,
+    @Body() rejectHotelDto: RejectHotelDto,
   ) {
-    return this.hotelsService.reject(id, reason);
+    return this.hotelsService.reject(id, rejectHotelDto.reason);
   }
 
   @Post('hotels/:id/offline')

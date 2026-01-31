@@ -79,20 +79,26 @@ const Register: React.FC = () => {
             name="username"
             rules={[
               { required: true, message: '请输入用户名' },
-              { min: 3, message: '用户名至少3个字符' },
+              { min: 6, message: '用户名至少6个字符' },
+              { max: 20, message: '用户名最多20个字符' },
             ]}
           >
-            <Input prefix={<UserOutlined />} placeholder="用户名" />
+            <Input prefix={<UserOutlined />} placeholder="用户名（6-20位）" />
           </Form.Item>
 
           <Form.Item
             name="password"
             rules={[
               { required: true, message: '请输入密码' },
-              { min: 6, message: '密码至少6个字符' },
+              { min: 8, message: '密码至少8个字符' },
+              { max: 20, message: '密码最多20个字符' },
+              {
+                pattern: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]+$/,
+                message: '密码必须包含数字和字母',
+              },
             ]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="密码" />
+            <Input.Password prefix={<LockOutlined />} placeholder="密码（8-20位，包含数字和字母）" />
           </Form.Item>
 
           <Form.Item

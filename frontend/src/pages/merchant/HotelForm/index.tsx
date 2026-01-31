@@ -4,6 +4,7 @@ import {
   Input,
   Button,
   Card,
+  Alert,
   Row,
   Col,
   Rate,
@@ -14,6 +15,7 @@ import {
   message,
   InputNumber,
   Select,
+  Image,
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,6 +23,7 @@ import {
   ArrowLeftOutlined,
   SaveOutlined,
   SendOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { hotelApi } from '../../../services/api';
@@ -48,6 +51,7 @@ const HotelForm: React.FC = () => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [rejectReason, setRejectReason] = useState<string | null>(null);
 
   const isEdit = !!id;
 
@@ -59,11 +63,16 @@ const HotelForm: React.FC = () => {
 
   const loadHotel = async (hotelId: number) => {
     try {
+      setIsReadOnly(false);
+      setRejectReason(null);
       const hotel = await hotelApi.getHotelById(hotelId);
       
       // 检查是否只读（非草稿和驳回状态）
       if (!['draft', 'rejected'].includes(hotel.status)) {
         setIsReadOnly(true);
+      }
+      if (hotel.status === 'rejected' && hotel.rejectReason) {
+        setRejectReason(hotel.rejectReason);
       }
 
       form.setFieldsValue({
@@ -150,6 +159,16 @@ const HotelForm: React.FC = () => {
           </Space>
         )}
       </div>
+
+      {rejectReason && (
+        <Alert
+          type="error"
+          showIcon
+          message="审核未通过"
+          description={rejectReason}
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       <Form
         form={form}
@@ -327,6 +346,83 @@ const HotelForm: React.FC = () => {
               style={{ width: '100%' }}
             />
           </Form.Item>
+        </Card>
+
+        {/* 酒店图片 */}
+        <Card title="酒店图片（可选）" className="form-card">
+          <Form.List name="images">
+            {(fields, { add, remove }) => (
+              <>
+                <Row gutter={[16, 16]}>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Col span={8} key={key}>
+                      <div className="image-item">
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'imageUrl']}
+                          rules={[{ required: true, message: '请输入图片URL' }]}
+                          style={{ marginBottom: 8 }}
+                        >
+                          <Input placeholder="输入图片URL" />
+                        </Form.Item>
+                        <Form.Item
+                          noStyle
+                          shouldUpdate={(prev, cur) => {
+                            const prevUrl = prev?.images?.[name]?.imageUrl;
+                            const curUrl = cur?.images?.[name]?.imageUrl;
+                            return prevUrl !== curUrl;
+                          }}
+                        >
+                          {({ getFieldValue }) => {
+                            const imageUrl = getFieldValue(['images', name, 'imageUrl']);
+                            return imageUrl ? (
+                              <Image
+                                src={imageUrl}
+                                alt="酒店图片"
+                                style={{ width: '100%', height: 150, objectFit: 'cover' }}
+                                fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgesAK9oMAfQAAAAPUExURczMzAAAAB8fHx4eHh8fH7XZRNsAAAAFdFJOU/////8A+7YOUwAAABxJREFUeJztzjEBACAQADAu+G8cBDDFmHJKFVQ7AAAAwAMWcwAEDtG0UQAAAABJRU5ErkJggg=="
+                              />
+                            ) : (
+                              <div className="image-placeholder">
+                                预览区域
+                              </div>
+                            );
+                          }}
+                        </Form.Item>
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'description']}
+                          style={{ marginTop: 8, marginBottom: 0 }}
+                        >
+                          <Input placeholder="图片描述（可选）" />
+                        </Form.Item>
+                        {!isReadOnly && (
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => remove(name)}
+                            style={{ position: 'absolute', top: 0, right: 0 }}
+                          />
+                        )}
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+                {!isReadOnly && (
+                  <Button
+                    type="dashed"
+                    onClick={() => add({ imageUrl: '', sortOrder: fields.length })}
+                    block
+                    icon={<PlusOutlined />}
+                    style={{ marginTop: 16 }}
+                  >
+                    添加图片
+                  </Button>
+                )}
+              </>
+            )}
+          </Form.List>
         </Card>
       </Form>
     </div>

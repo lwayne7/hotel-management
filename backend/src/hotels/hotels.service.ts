@@ -21,6 +21,36 @@ export class HotelsService {
     private hotelImagesRepository: Repository<HotelImage>,
   ) {}
 
+  private static toNumber(value: unknown): number {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return Number(value);
+    return Number.NaN;
+  }
+
+  private sortHotelRelations(hotel: Hotel): Hotel {
+    if (Array.isArray(hotel.roomTypes)) {
+      hotel.roomTypes.sort((a: any, b: any) => {
+        const aPrice = HotelsService.toNumber(a?.price);
+        const bPrice = HotelsService.toNumber(b?.price);
+
+        if (Number.isNaN(aPrice) && Number.isNaN(bPrice)) return 0;
+        if (Number.isNaN(aPrice)) return 1;
+        if (Number.isNaN(bPrice)) return -1;
+        return aPrice - bPrice;
+      });
+    }
+
+    if (Array.isArray(hotel.images)) {
+      hotel.images.sort((a: any, b: any) => {
+        const aOrder = typeof a?.sortOrder === 'number' ? a.sortOrder : Number(a?.sortOrder ?? 0);
+        const bOrder = typeof b?.sortOrder === 'number' ? b.sortOrder : Number(b?.sortOrder ?? 0);
+        return aOrder - bOrder;
+      });
+    }
+
+    return hotel;
+  }
+
   // 创建酒店
   async create(createHotelDto: CreateHotelDto, merchantId: number): Promise<Hotel> {
     const { roomTypes, images, ...hotelData } = createHotelDto;
@@ -80,6 +110,8 @@ export class HotelsService {
       .take(pageSize)
       .getMany();
 
+    data.forEach((hotel) => this.sortHotelRelations(hotel));
+
     return {
       data,
       page,
@@ -100,7 +132,21 @@ export class HotelsService {
       throw new NotFoundException('酒店不存在');
     }
 
-    return hotel;
+    return this.sortHotelRelations(hotel);
+  }
+
+  // 获取单个酒店（商户，仅可看自己的）
+  async findOneForMerchant(id: number, merchantId: number): Promise<Hotel> {
+    const hotel = await this.hotelsRepository.findOne({
+      where: { id, merchantId },
+      relations: ['roomTypes', 'images'],
+    });
+
+    if (!hotel) {
+      throw new NotFoundException('酒店不存在');
+    }
+
+    return this.sortHotelRelations(hotel);
   }
 
   // 更新酒店
@@ -191,7 +237,8 @@ export class HotelsService {
 
     hotel.status = HotelStatus.PENDING;
     hotel.rejectReason = null;
-    return this.hotelsRepository.save(hotel);
+    const saved = await this.hotelsRepository.save(hotel);
+    return this.sortHotelRelations(saved);
   }
 
   // ========== 管理员接口 ==========
@@ -217,6 +264,7 @@ export class HotelsService {
 
     // 移除密码
     data.forEach((hotel) => {
+      this.sortHotelRelations(hotel);
       if (hotel.merchant) {
         delete (hotel.merchant as any).password;
       }
@@ -241,7 +289,8 @@ export class HotelsService {
 
     hotel.status = HotelStatus.APPROVED;
     hotel.rejectReason = null;
-    return this.hotelsRepository.save(hotel);
+    const saved = await this.hotelsRepository.save(hotel);
+    return this.sortHotelRelations(saved);
   }
 
   // 审核驳回
@@ -254,7 +303,8 @@ export class HotelsService {
 
     hotel.status = HotelStatus.REJECTED;
     hotel.rejectReason = reason;
-    return this.hotelsRepository.save(hotel);
+    const saved = await this.hotelsRepository.save(hotel);
+    return this.sortHotelRelations(saved);
   }
 
   // 下线
@@ -266,7 +316,8 @@ export class HotelsService {
     }
 
     hotel.status = HotelStatus.OFFLINE;
-    return this.hotelsRepository.save(hotel);
+    const saved = await this.hotelsRepository.save(hotel);
+    return this.sortHotelRelations(saved);
   }
 
   // 上线（恢复）
@@ -278,6 +329,7 @@ export class HotelsService {
     }
 
     hotel.status = HotelStatus.APPROVED;
-    return this.hotelsRepository.save(hotel);
+    const saved = await this.hotelsRepository.save(hotel);
+    return this.sortHotelRelations(saved);
   }
 }
