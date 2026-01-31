@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { Hotel } from '../hotels/entities/hotel.entity';
+import { Hotel } from '../../hotels/entities/hotel.entity';
 
 export enum UserRole {
   MERCHANT = 'merchant',
