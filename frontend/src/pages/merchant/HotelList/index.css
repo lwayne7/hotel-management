@@ -1,0 +1,29 @@
+.merchant-hotels {
+  padding: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.page-header h3 {
+  margin: 0;
+}
+
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.filter-bar .ant-tabs {
+  flex: 1;
+}
+
+.filter-bar .ant-tabs-nav {
+  margin-bottom: 0;
+}

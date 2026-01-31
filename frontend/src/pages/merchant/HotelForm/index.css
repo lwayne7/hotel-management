@@ -1,0 +1,36 @@
+.hotel-form-page {
+  padding: 0;
+}
+
+.hotel-form-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.form-card {
+  margin-bottom: 24px;
+}
+
+.room-type-item {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.room-type-item .ant-form-item {
+  margin-bottom: 0;
+}
+
+.remove-btn {
+  color: #ff4d4f;
+  font-size: 18px;
+  cursor: pointer;
+  margin-top: 32px;
+}
+
+.remove-btn:hover {
+  color: #ff7875;
+}
