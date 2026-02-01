@@ -332,4 +332,52 @@ export class HotelsService {
     const saved = await this.hotelsRepository.save(hotel);
     return this.sortHotelRelations(saved);
   }
+
+  // 商户统计数据
+  async getMerchantStatistics(merchantId: number) {
+    const total = await this.hotelsRepository.count({
+      where: { merchantId },
+    });
+
+    const pending = await this.hotelsRepository.count({
+      where: { merchantId, status: HotelStatus.PENDING },
+    });
+
+    const approved = await this.hotelsRepository.count({
+      where: { merchantId, status: HotelStatus.APPROVED },
+    });
+
+    const rejected = await this.hotelsRepository.count({
+      where: { merchantId, status: HotelStatus.REJECTED },
+    });
+
+    const draft = await this.hotelsRepository.count({
+      where: { merchantId, status: HotelStatus.DRAFT },
+    });
+
+    return { total, pending, approved, rejected, draft };
+  }
+
+  // 管理员统计数据
+  async getAdminStatistics() {
+    const total = await this.hotelsRepository.count();
+
+    const pending = await this.hotelsRepository.count({
+      where: { status: HotelStatus.PENDING },
+    });
+
+    const approved = await this.hotelsRepository.count({
+      where: { status: HotelStatus.APPROVED },
+    });
+
+    const rejected = await this.hotelsRepository.count({
+      where: { status: HotelStatus.REJECTED },
+    });
+
+    const offline = await this.hotelsRepository.count({
+      where: { status: HotelStatus.OFFLINE },
+    });
+
+    return { total, pending, approved, rejected, offline };
+  }
 }

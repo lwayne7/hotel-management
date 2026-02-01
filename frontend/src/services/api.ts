@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -103,6 +103,8 @@ export const hotelApi = {
   updateHotel: (id: number, data: any): Promise<Hotel> => api.patch(`/hotels/${id}`, data),
   deleteHotel: (id: number): Promise<void> => api.delete(`/hotels/${id}`),
   submitForReview: (id: number): Promise<Hotel> => api.post(`/hotels/${id}/submit`),
+  getMerchantStatistics: (): Promise<{ total: number; pending: number; approved: number; rejected: number; draft: number }> =>
+    api.get('/hotels/statistics'),
 
   // 管理员端
   getPendingHotels: (params?: { page?: number; status?: string }): Promise<{ data: Hotel[]; page: number; pageSize: number; total: number }> =>
@@ -112,6 +114,8 @@ export const hotelApi = {
     api.post(`/admin/hotels/${id}/reject`, { reason }),
   offlineHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/offline`),
   onlineHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/online`),
+  getAdminStatistics: (): Promise<{ total: number; pending: number; approved: number; rejected: number; offline: number }> =>
+    api.get('/admin/statistics'),
 };
 
 // 上传相关 API

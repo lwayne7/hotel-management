@@ -66,6 +66,14 @@ export class HotelsController {
     );
   }
 
+  @Get('statistics')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MERCHANT)
+  @ApiOperation({ summary: '获取商户统计数据' })
+  async getMerchantStatistics(@CurrentUser() user: { id: number }) {
+    return this.hotelsService.getMerchantStatistics(user.id);
+  }
+
   @Get()
   @UseGuards(RolesGuard)
   @Roles(UserRole.MERCHANT)

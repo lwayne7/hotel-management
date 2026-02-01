@@ -1,98 +1,132 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 易宿酒店预订平台 - 后端服务
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 项目简介
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+本项目是易宿酒店预订平台的后端服务，基于 NestJS 框架开发，提供酒店管理、用户认证、审核流程等 API 接口。
 
-## Description
+## 技术栈
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **框架**: NestJS + TypeScript
+- **ORM**: TypeORM
+- **数据库**: 
+  - 开发环境: SQLite (better-sqlite3)
+  - 生产环境: PostgreSQL
+- **认证**: Passport + JWT
+- **文档**: Swagger
 
-## Project setup
+## 快速开始
+
+### 1. 安装依赖
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+### 2. 配置环境变量
+
+复制环境变量示例文件：
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cp .env.example .env.local
 ```
 
-## Run tests
+### 3. 数据库配置
+
+#### 开发环境 (SQLite - 默认)
+
+默认使用 SQLite，无需额外配置，启动后会自动创建 `hotel_management.sqlite` 文件。
+
+```env
+# .env.local
+DB_TYPE=sqlite
+DB_DATABASE=hotel_management.sqlite
+JWT_SECRET=your_jwt_secret_key_here
+```
+
+#### 生产环境 (PostgreSQL - 推荐)
+
+生产环境建议使用 PostgreSQL：
+
+```env
+# .env.local
+DB_TYPE=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=your_password
+DB_DATABASE=hotel_management
+JWT_SECRET=your_jwt_secret_key_here
+```
+
+确保 PostgreSQL 服务已启动，并创建数据库：
+
+```sql
+CREATE DATABASE hotel_management;
+```
+
+### 4. 启动服务
 
 ```bash
-# unit tests
-$ npm run test
+# 开发模式
+npm run start:dev
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# 生产模式
+npm run build
+npm run start:prod
 ```
 
-## Deployment
+服务将在 `http://localhost:3000` 启动。
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## API 文档
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+启动服务后访问 Swagger 文档：
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```
+http://localhost:3000/api/docs
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## API 接口概览
 
-## Resources
+所有接口都带有 `/api` 前缀。
 
-Check out a few resources that may come in handy when working with NestJS:
+### 认证接口
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| POST | /api/auth/register | 用户注册 |
+| POST | /api/auth/login | 用户登录 |
+| GET | /api/auth/profile | 获取当前用户信息 |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 商户接口
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/hotels | 获取我的酒店列表 |
+| GET | /api/hotels/statistics | 获取商户统计数据 |
+| GET | /api/hotels/:id | 获取酒店详情 |
+| POST | /api/hotels | 创建酒店 |
+| PUT | /api/hotels/:id | 更新酒店 |
+| DELETE | /api/hotels/:id | 删除酒店 |
+| POST | /api/hotels/:id/submit | 提交审核 |
 
-## Support
+### 管理员接口
+| 方法 | 路径 | 描述 |
+|------|------|------|
+| GET | /api/admin/hotels | 获取所有酒店列表 |
+| GET | /api/admin/statistics | 获取管理员统计数据 |
+| GET | /api/admin/hotels/:id | 获取酒店详情 |
+| POST | /api/admin/hotels/:id/approve | 审核通过 |
+| POST | /api/admin/hotels/:id/reject | 审核驳回 |
+| POST | /api/admin/hotels/:id/offline | 酒店下线 |
+| POST | /api/admin/hotels/:id/online | 酒店上线 |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 关于数据库选择
 
-## Stay in touch
+| 特性 | SQLite | PostgreSQL |
+|------|--------|------------|
+| 适用场景 | 开发、测试 | 生产环境 |
+| 并发支持 | 有限 | 高并发 |
+| 数据持久化 | 单文件 | 独立服务 |
+| 部署复杂度 | 零配置 | 需要安装服务 |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**建议**：
+- 本地开发使用 SQLite，快速启动无需配置
+- 生产部署切换到 PostgreSQL，确保数据安全和性能

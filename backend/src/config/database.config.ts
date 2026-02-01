@@ -1,9 +1,9 @@
 import { registerAs } from '@nestjs/config';
 
-// 判断是否使用 SQLite（开发环境默认使用）
-const useSqlite = process.env.DB_TYPE === 'sqlite' || !process.env.DB_HOST;
-
 export default registerAs('database', () => {
+  // 判断是否使用 SQLite（只有明确设置 DB_TYPE=sqlite 或没有设置 DB_HOST 时才用 SQLite）
+  const useSqlite = process.env.DB_TYPE === 'sqlite' || (!process.env.DB_TYPE && !process.env.DB_HOST);
+  
   if (useSqlite) {
     return {
       type: 'better-sqlite3',

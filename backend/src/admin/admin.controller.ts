@@ -30,6 +30,12 @@ import { RejectHotelDto } from './dto';
 export class AdminController {
   constructor(private readonly hotelsService: HotelsService) {}
 
+  @Get('statistics')
+  @ApiOperation({ summary: '获取管理员统计数据' })
+  async getAdminStatistics() {
+    return this.hotelsService.getAdminStatistics();
+  }
+
   @Get('hotels')
   @ApiOperation({ summary: '获取酒店列表（管理员）' })
   @ApiQuery({ name: 'page', required: false, type: Number })

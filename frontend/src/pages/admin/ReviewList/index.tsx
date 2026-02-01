@@ -332,7 +332,32 @@ const ReviewList: React.FC = () => {
               <Descriptions.Item label="交通信息" span={2}>
                 {detailModal.hotel.transportation?.join('、') || '-'}
               </Descriptions.Item>
+              <Descriptions.Item label="附近景点" span={2}>
+                {detailModal.hotel.nearbyAttractions?.join('、') || '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="交通信息" span={2}>
+                {detailModal.hotel.transportation?.join('、') || '-'}
+              </Descriptions.Item>
             </Descriptions>
+
+            {/* 酒店图片展示 */}
+            {detailModal.hotel.images && detailModal.hotel.images.length > 0 && (
+              <Card title="酒店图片" size="small" style={{ marginTop: 16 }}>
+                <Image.PreviewGroup>
+                  <Row gutter={[8, 8]}>
+                    {detailModal.hotel.images.map((img: any, index: number) => (
+                      <Col span={6} key={index}>
+                        <Image
+                          src={img.imageUrl}
+                          alt={img.description || `酒店图片${index + 1}`}
+                          style={{ width: '100%', height: 100, objectFit: 'cover' }}
+                        />
+                      </Col>
+                    ))}
+                  </Row>
+                </Image.PreviewGroup>
+              </Card>
+            )}
 
             {detailModal.hotel.roomTypes && detailModal.hotel.roomTypes.length > 0 && (
               <Card title="房型信息" size="small" style={{ marginTop: 16 }}>
