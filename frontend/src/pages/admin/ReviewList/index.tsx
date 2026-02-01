@@ -332,28 +332,32 @@ const ReviewList: React.FC = () => {
               <Descriptions.Item label="交通信息" span={2}>
                 {detailModal.hotel.transportation?.join('、') || '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="附近景点" span={2}>
-                {detailModal.hotel.nearbyAttractions?.join('、') || '-'}
-              </Descriptions.Item>
-              <Descriptions.Item label="交通信息" span={2}>
-                {detailModal.hotel.transportation?.join('、') || '-'}
-              </Descriptions.Item>
             </Descriptions>
 
-            {/* 酒店图片展示 */}
+            {/* 酒店图片展示（仅一处） */}
             {detailModal.hotel.images && detailModal.hotel.images.length > 0 && (
               <Card title="酒店图片" size="small" style={{ marginTop: 16 }}>
                 <Image.PreviewGroup>
                   <Row gutter={[8, 8]}>
-                    {detailModal.hotel.images.map((img: any, index: number) => (
-                      <Col span={6} key={index}>
-                        <Image
-                          src={img.imageUrl}
-                          alt={img.description || `酒店图片${index + 1}`}
-                          style={{ width: '100%', height: 100, objectFit: 'cover' }}
-                        />
-                      </Col>
-                    ))}
+                    {detailModal.hotel.images
+                      .slice()
+                      .sort((a: any, b: any) => Number(a?.sortOrder ?? 0) - Number(b?.sortOrder ?? 0))
+                      .map((img: any) => (
+                        <Col span={8} key={img.id ?? img.imageUrl}>
+                          <Image
+                            src={img.imageUrl}
+                            alt={img.description || '酒店图片'}
+                            style={{ width: '100%', height: 150, objectFit: 'cover' }}
+                          />
+                          {img.description && (
+                            <div style={{ marginTop: 4 }}>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {img.description}
+                              </Text>
+                            </div>
+                          )}
+                        </Col>
+                      ))}
                   </Row>
                 </Image.PreviewGroup>
               </Card>
@@ -378,34 +382,6 @@ const ReviewList: React.FC = () => {
                     </Text>
                   </div>
                 ))}
-              </Card>
-            )}
-
-            {detailModal.hotel.images && detailModal.hotel.images.length > 0 && (
-              <Card title="酒店图片" size="small" style={{ marginTop: 16 }}>
-                <Image.PreviewGroup>
-                  <Row gutter={[12, 12]}>
-                    {detailModal.hotel.images
-                      .slice()
-                      .sort((a, b) => Number(a?.sortOrder ?? 0) - Number(b?.sortOrder ?? 0))
-                      .map((img) => (
-                        <Col span={8} key={img.id ?? img.imageUrl}>
-                          <Image
-                            src={img.imageUrl}
-                            alt={img.description || '酒店图片'}
-                            style={{ width: '100%', height: 150, objectFit: 'cover' }}
-                          />
-                          {img.description && (
-                            <div style={{ marginTop: 4 }}>
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                {img.description}
-                              </Text>
-                            </div>
-                          )}
-                        </Col>
-                      ))}
-                  </Row>
-                </Image.PreviewGroup>
               </Card>
             )}
           </div>
