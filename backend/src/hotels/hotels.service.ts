@@ -19,7 +19,7 @@ export class HotelsService {
     private roomTypesRepository: Repository<RoomType>,
     @InjectRepository(HotelImage)
     private hotelImagesRepository: Repository<HotelImage>,
-  ) {}
+  ) { }
 
   private static toNumber(value: unknown): number {
     if (typeof value === 'number') return value;
@@ -403,12 +403,12 @@ export class HotelsService {
 
     if (filters?.keyword?.trim()) {
       query.andWhere(
-        '(hotel.nameCn ILIKE :keyword OR hotel.nameEn ILIKE :keyword OR hotel.address ILIKE :keyword OR hotel.description ILIKE :keyword)',
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword)',
         { keyword: `%${filters.keyword.trim()}%` },
       );
     }
     if (filters?.city?.trim()) {
-      query.andWhere('hotel.address ILIKE :city', {
+      query.andWhere('hotel.address LIKE :city', {
         city: `%${filters.city.trim()}%`,
       });
     }
