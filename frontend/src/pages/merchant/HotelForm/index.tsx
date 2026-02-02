@@ -101,6 +101,16 @@ const HotelForm: React.FC = () => {
       if (isEdit) {
         await hotelApi.updateHotel(parseInt(id!), data);
         message.success('保存成功');
+        // 保存后实时更新：重新拉取最新数据回填表单
+        const updated = await hotelApi.getHotelById(parseInt(id!));
+        form.setFieldsValue({
+          ...updated,
+          openingDate: updated.openingDate ? dayjs(updated.openingDate) : undefined,
+          facilities: updated.facilities || [],
+          nearbyAttractions: updated.nearbyAttractions || [],
+          transportation: updated.transportation || [],
+          roomTypes: updated.roomTypes || [],
+        });
       } else {
         const newHotel = await hotelApi.createHotel(data);
         message.success('创建成功');

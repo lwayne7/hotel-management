@@ -19,7 +19,7 @@ export class HotelsService {
     private roomTypesRepository: Repository<RoomType>,
     @InjectRepository(HotelImage)
     private hotelImagesRepository: Repository<HotelImage>,
-  ) {}
+  ) { }
 
   private static toNumber(value: unknown): number {
     if (typeof value === 'number') return value;
@@ -379,5 +379,91 @@ export class HotelsService {
     });
 
     return { total, pending, approved, rejected, offline };
+  }
+
+  // ========== 用户端公开接口（仅已发布酒店）==========
+
+  async findApprovedHotels(
+    page = 1,
+    pageSize = 10,
+    filters?: {
+      keyword?: string;
+      city?: string;
+      starRating?: number;
+      minPrice?: number;
+      maxPrice?: number;
+    },
+  ) {
+    const query = this.hotelsRepository
+      .createQueryBuilder('hotel')
+      .leftJoinAndSelect('hotel.roomTypes', 'roomTypes')
+      .leftJoinAndSelect('hotel.images', 'images')
+      .where('hotel.status = :status', { status: HotelStatus.APPROVED })
+      .orderBy('hotel.updatedAt', 'DESC');
+
+    if (filters?.keyword?.trim()) {
+      query.andWhere(
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword)',
+        { keyword: `%${filters.keyword.trim()}%` },
+      );
+    }
+    if (filters?.city?.trim()) {
+      query.andWhere('hotel.address LIKE :city', {
+        city: `%${filters.city.trim()}%`,
+      });
+    }
+    if (filters?.starRating != null && filters.starRating > 0) {
+      query.andWhere('hotel.starRating >= :starRating', {
+        starRating: filters.starRating,
+      });
+    }
+    // 价格区间：由前端在列表结果中筛选或展示区间
+    if (filters?.minPrice != null && filters.minPrice > 0) {
+      const subQuery = this.hotelsRepository.manager
+        .createQueryBuilder()
+        .select('rt.hotelId', 'hotelId')
+        .from('room_types', 'rt')
+        .groupBy('rt.hotelId')
+        .having('MIN(rt.price) >= :minPrice');
+      query.andWhere(`hotel.id IN (${subQuery.getQuery()})`).setParameter('minPrice', filters.minPrice);
+    }
+    if (filters?.maxPrice != null && filters.maxPrice > 0) {
+      const subQuery = this.hotelsRepository.manager
+        .createQueryBuilder()
+        .select('rt.hotelId', 'hotelId')
+        .from('room_types', 'rt')
+        .groupBy('rt.hotelId')
+        .having('MIN(rt.price) <= :maxPrice');
+      query.andWhere(`hotel.id IN (${subQuery.getQuery()})`).setParameter('maxPrice', filters.maxPrice);
+    }
+
+    const total = await query.getCount();
+    const data = await query
+      .skip((page - 1) * pageSize)
+      .take(pageSize)
+      .getMany();
+
+    data.forEach((hotel) => this.sortHotelRelations(hotel));
+
+    return {
+      data,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  async findOneApproved(id: number): Promise<Hotel> {
+    const hotel = await this.hotelsRepository.findOne({
+      where: { id, status: HotelStatus.APPROVED },
+      relations: ['roomTypes', 'images'],
+    });
+
+    if (!hotel) {
+      throw new NotFoundException('酒店不存在或未发布');
+    }
+
+    return this.sortHotelRelations(hotel);
   }
 }
