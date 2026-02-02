@@ -1,5 +1,18 @@
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import path from 'path';
+import dotenv from 'dotenv';
+
+const backendRoot = path.resolve(__dirname, '../..');
+// 与 ConfigModule 的 envFilePath 顺序一致：.env.local 优先生效
+dotenv.config({ path: path.resolve(backendRoot, '.env.local') });
+dotenv.config({ path: path.resolve(backendRoot, '.env') });
+
+const resolveSqliteDatabasePath = (db: string): string => {
+  if (db === ':memory:' || db.startsWith('file:')) return db;
+  if (path.isAbsolute(db)) return db;
+  return path.resolve(backendRoot, db);
+};
 
 // 预设的测试用户数据
 const seedUsers = [
@@ -274,14 +287,15 @@ async function seed() {
   console.log('🌱 开始初始化种子数据...');
 
   // 根据环境变量判断数据库类型
-  const dbType = process.env.DB_TYPE || 'postgres';
+  const useSqlite = process.env.DB_TYPE === 'sqlite' || (!process.env.DB_TYPE && !process.env.DB_HOST);
+  const dbType = useSqlite ? 'sqlite' : 'postgres';
   
   let dataSourceOptions: any;
   
   if (dbType === 'sqlite') {
     dataSourceOptions = {
       type: 'better-sqlite3',
-      database: process.env.DB_DATABASE || 'hotel_management.sqlite',
+      database: resolveSqliteDatabasePath(process.env.DB_DATABASE || 'hotel_management.sqlite'),
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: true,
     };

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import path from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config';
@@ -15,7 +16,8 @@ import { AdminModule } from './admin/admin.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig],
-      envFilePath: ['.env.local', '.env'],
+      // 使用绝对路径，避免从不同工作目录启动时读不到 env 文件
+      envFilePath: [path.resolve(__dirname, '../.env.local'), path.resolve(__dirname, '../.env')],
     }),
     // 数据库模块
     TypeOrmModule.forRootAsync({
