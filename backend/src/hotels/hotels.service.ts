@@ -402,8 +402,9 @@ export class HotelsService {
       .orderBy('hotel.updatedAt', 'DESC');
 
     if (filters?.keyword?.trim()) {
+      // 搜索酒店名称、地址、描述和设施标签
       query.andWhere(
-        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword)',
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword OR hotel.facilities LIKE :keyword)',
         { keyword: `%${filters.keyword.trim()}%` },
       );
     }
