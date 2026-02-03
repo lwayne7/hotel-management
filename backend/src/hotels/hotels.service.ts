@@ -392,18 +392,39 @@ export class HotelsService {
       starRating?: number;
       minPrice?: number;
       maxPrice?: number;
+      sortBy?: string;
+      // 综合筛选参数
+      facilities?: string[];
+      brands?: string[];
+      hotelFeatures?: string[];
+      roomFeatures?: string[];
     },
   ) {
     const query = this.hotelsRepository
       .createQueryBuilder('hotel')
       .leftJoinAndSelect('hotel.roomTypes', 'roomTypes')
       .leftJoinAndSelect('hotel.images', 'images')
-      .where('hotel.status = :status', { status: HotelStatus.APPROVED })
-      .orderBy('hotel.updatedAt', 'DESC');
+      .where('hotel.status = :status', { status: HotelStatus.APPROVED });
+
+    // 默认按更新时间排序，但可以根据 sortBy 参数改变
+    if (filters?.sortBy === 'price') {
+      // 按价格排序（从低到高）
+      query.orderBy('roomTypes.price', 'ASC', 'NULLS LAST').addOrderBy('hotel.updatedAt', 'DESC');
+    } else if (filters?.sortBy === 'popular' || filters?.sortBy === 'smart') {
+      // 智能排序/按欢迎度排序（使用星级和更新时间）
+      query.orderBy('hotel.starRating', 'DESC').addOrderBy('hotel.updatedAt', 'DESC');
+    } else if (filters?.sortBy === 'distance') {
+      // 按距离排序（暂时使用更新时间，未来可添加GPS定位）
+      query.orderBy('hotel.updatedAt', 'DESC');
+    } else {
+      // 默认按更新时间排序
+      query.orderBy('hotel.updatedAt', 'DESC');
+    }
 
     if (filters?.keyword?.trim()) {
+      // 搜索酒店名称、地址、描述和设施标签
       query.andWhere(
-        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword)',
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword OR hotel.facilities LIKE :keyword)',
         { keyword: `%${filters.keyword.trim()}%` },
       );
     }
@@ -417,7 +438,46 @@ export class HotelsService {
         starRating: filters.starRating,
       });
     }
-    // 价格区间：由前端在列表结果中筛选或展示区间
+    
+    // 设施筛选 - 搜索 facilities 字段
+    if (filters?.facilities?.length) {
+      const facilityConditions = filters.facilities.map((_, i) => `hotel.facilities LIKE :facility${i}`);
+      query.andWhere(`(${facilityConditions.join(' OR ')})`);
+      filters.facilities.forEach((facility, i) => {
+        query.setParameter(`facility${i}`, `%${facility}%`);
+      });
+    }
+    
+    // 品牌筛选 - 搜索酒店名称
+    if (filters?.brands?.length) {
+      const brandConditions = filters.brands.map((_, i) => `hotel.nameCn LIKE :brand${i}`);
+      query.andWhere(`(${brandConditions.join(' OR ')})`);
+      filters.brands.forEach((brand, i) => {
+        query.setParameter(`brand${i}`, `%${brand}%`);
+      });
+    }
+    
+    // 酒店特色筛选 - 搜索 description 和 facilities 字段
+    if (filters?.hotelFeatures?.length) {
+      const featureConditions = filters.hotelFeatures.map((_, i) => 
+        `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i})`
+      );
+      query.andWhere(`(${featureConditions.join(' OR ')})`);
+      filters.hotelFeatures.forEach((feature, i) => {
+        query.setParameter(`hotelFeature${i}`, `%${feature}%`);
+      });
+    }
+    
+    // 房间特色筛选 - 搜索房型名称
+    if (filters?.roomFeatures?.length) {
+      const roomConditions = filters.roomFeatures.map((_, i) => `roomTypes.name LIKE :roomFeature${i}`);
+      query.andWhere(`(${roomConditions.join(' OR ')})`);
+      filters.roomFeatures.forEach((feature, i) => {
+        query.setParameter(`roomFeature${i}`, `%${feature}%`);
+      });
+    }
+    
+    // 价格区间筛选
     if (filters?.minPrice != null && filters.minPrice > 0) {
       const subQuery = this.hotelsRepository.manager
         .createQueryBuilder()

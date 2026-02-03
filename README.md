@@ -6,8 +6,10 @@
 
 本项目分为两部分，与「第五期前端训练营大作业」要求对齐：
 
-- **用户端预定流程（移动端）**：独立项目 [hotel-mobile](../hotel-mobile)，与后端公开 API 对接。
-  - 酒店查询页（首页）、酒店列表页（上滑加载）、酒店详情页；入口为 `hotel-mobile` 的 `/`、`/hotels`、`/hotels/:id`。
+- **用户端预定流程（移动端）**：
+  - Vite H5 版：[hotel-mobile](../hotel-mobile)，基于 React 19 + Vite 7 + Ant Design 6
+  - Taro 多端版：[hotel-mobile-taro](../hotel-mobile-taro)，支持 H5 / 微信小程序 / React Native APP
+  - 酒店查询页（首页）、酒店列表页（上滑加载）、酒店详情页、收藏夹
 - **管理酒店信息系统（PC 站点）**
   - 用户登录/注册（商户、管理员角色；注册可选角色，登录自动判断）
   - 酒店信息录入/编辑/修改（商户）；保存后实时更新到端侧
@@ -16,19 +18,19 @@
 ## 🛠 技术栈
 
 ### 前端
-- ⚛️ **React 18** - 现代化 UI 框架
-- 📘 **TypeScript** - 类型安全
-- ⚡ **Vite** - 快速构建工具
-- 🎨 **Ant Design 5.x** - 企业级 UI 组件库
+- ⚛️ **React 19** - 现代化 UI 框架
+- 📘 **TypeScript 5.9** - 类型安全
+- ⚡ **Vite 7** - 快速构建工具
+- 🎨 **Ant Design 6** - 企业级 UI 组件库
 - 🔄 **Redux Toolkit** - 状态管理
-- 🛣️ **React Router 6** - 路由管理
+- 🛣️ **React Router 7** - 路由管理
 - 📡 **Axios** - HTTP 客户端
 
 ### 后端
-- 🦅 **NestJS** - 企业级 Node.js 框架
-- 📘 **TypeScript** - 类型安全
-- 🗃️ **TypeORM** - ORM 框架
-- 🐘 **PostgreSQL** - 关系型数据库
+- 🦅 **NestJS 11** - 企业级 Node.js 框架
+- 📘 **TypeScript 5** - 类型安全
+- 🗃️ **TypeORM 0.3** - ORM 框架
+- 🐘 **PostgreSQL / SQLite** - 关系型数据库
 - 🔐 **Passport + JWT** - 身份认证
 - 📝 **Swagger** - API 文档
 
@@ -269,30 +271,51 @@ OSS_BUCKET=your_bucket
 
 ## 🌱 种子数据
 
-后端提供种子脚本，可初始化测试用户与演示酒店（见 `backend/src/seeds/seed.ts`）。运行：
+后端提供完整的种子数据系统（见 `backend/src/seeds/`），支持：
 
+### 初始化基础数据
 ```bash
 cd backend
 npm run seed
-# 或 npx ts-node -r tsconfig-paths/register src/seeds/seed.ts
+```
+创建测试用户和 10 家精选演示酒店。
+
+### 批量生成测试酒店
+```bash
+cd backend
+npm run generate-hotels
+```
+生成 **10000 家酒店**，确保筛选功能测试覆盖完整：
+
+| 维度 | 分布 | 数量 |
+|------|------|------|
+| 亲子酒店 | ~20% | ~2000 家 |
+| 豪华酒店 | ~20% | ~2000 家 |
+| 免费停车场 | ~20% | ~2000 家 |
+| 含早餐 | ~20% | ~2000 家 |
+| 健身房 | ~20% | ~2000 家 |
+| 1-5 星级 | 各 ~20% | 各 ~2000 家 |
+| 覆盖城市 | - | 50 个城市 |
+
+### 更新酒店图片
+```bash
+cd backend
+npm run update-images
 ```
 
-测试账号见控制台输出（商户 merchant01/merchant02、管理员 admin01 等）。种子数据仅插入到**当前配置的数据库**，每人运行后得到的是各自库里的副本。
+### 图片资源
+- **150+ 张精选酒店图片**（Unsplash 高质量）
+- 酒店外观 50 张、大堂 20 张、泳池 15 张
+- 房型图片：大床房 20 张、双床房 15 张、套房 15 张、家庭房 12 张、标间 12 张
+- 使用 `hotelId + cityIndex` 种子算法确保不同酒店图片唯一
 
-## 🧪 测试账号
+测试账号见控制台输出：
 
-首次运行后，可执行上述种子脚本，或手动在数据库中创建管理员账号：
-
-```sql
--- 创建管理员账号（密码需要是 bcrypt 加密后的值）
-INSERT INTO users (username, password, role, "createdAt", "updatedAt")
-VALUES ('admin', '$2b$10$...', 'admin', NOW(), NOW());
-```
-
-或者先注册一个商户，然后修改角色为管理员：
-```sql
-UPDATE users SET role = 'admin' WHERE username = 'your_username';
-```
+| 角色 | 用户名 | 密码 |
+|------|--------|------|
+| 商户 | merchant01 | Test123456 |
+| 商户 | merchant02 | Test123456 |
+| 管理员 | admin01 | Admin123456 |
 
 ## 📄 项目文档
 

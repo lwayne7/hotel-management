@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -18,15 +19,20 @@ async function bootstrap() {
     }),
   );
 
-  // 启用 CORS（Vite 5173/3001、Taro H5 10086、本机/局域网）
+  // 启用 CORS（开发环境放开，避免小程序/DevTools 由于 Origin/Referer 被拦截导致“请求成功但拿不到数据/直接失败”）
+  const isProd = process.env.NODE_ENV === 'production';
   app.enableCors({
-    origin: (origin, callback) => {
-      const allowed =
-        !origin ||
-        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-        /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
-      callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
-    },
+    origin: isProd
+      ? (origin, callback) => {
+          const allowed =
+            !origin ||
+            /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+            /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(origin) ||
+            /^https:\/\/.*\.vercel\.app$/.test(origin) ||
+            /^https:\/\/servicewechat\.com$/.test(origin);
+          callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+        }
+      : true,
     credentials: true,
   });
 
@@ -45,6 +51,22 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
+
+  // 启动信息：便于定位“请求到空库/命中错误数据库”
+  try {
+    const config = app.get(ConfigService);
+    const dbType = config.get<string>('database.type');
+    if (dbType === 'better-sqlite3') {
+      console.log(`🗄️  DB: sqlite (${config.get('database.database')})`);
+    } else {
+      console.log(
+        `🗄️  DB: postgres (${config.get('database.host')}:${config.get('database.port')}/${config.get('database.database')} user=${config.get('database.username')})`,
+      );
+    }
+  } catch {
+    // ignore
+  }
+
   console.log(`🚀 Server running on http://localhost:${port}`);
   console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
 }
