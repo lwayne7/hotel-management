@@ -128,9 +128,9 @@
    ```bash
    cd hotel-management/backend
    npm install
-   copy .env.example .env
+   cp .env.example .env
    # 编辑 .env 配置 PostgreSQL
-   node create-postgres-db.js
+   # 确保 PostgreSQL 已创建 hotel_management 数据库
    npm run seed
    npm run start:dev
    ```
@@ -185,7 +185,8 @@
 
 **测试数据**：
 - ✅ 3个测试账号（2商户+1管理员）
-- ✅ 2个演示酒店
+- ✅ 10家精选演示酒店
+- ✅ 支持生成10000家测试酒店
 - ✅ 完整的业务流程演示
 
 ---
@@ -293,6 +294,7 @@ JWT 认证
 
 | 日期 | 版本 | 更新内容 |
 |------|------|----------|
+| 2026-02-03 | v1.1 | 更新种子数据说明,添加大量测试数据生成功能 |
 | 2026-02-01 | v1.0 | 初始版本，创建完整文档体系 |
 
 ---
