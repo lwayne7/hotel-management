@@ -21,6 +21,7 @@ export class PublicHotelsController {
   @ApiQuery({ name: 'brands', required: false, type: String, description: '品牌筛选，逗号分隔' })
   @ApiQuery({ name: 'hotelFeatures', required: false, type: String, description: '酒店特色，逗号分隔' })
   @ApiQuery({ name: 'roomFeatures', required: false, type: String, description: '房间特色，逗号分隔' })
+  @ApiQuery({ name: 'tags', required: false, type: String, description: '热门标签筛选，逗号分隔' })
   async list(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -34,6 +35,7 @@ export class PublicHotelsController {
     @Query('brands') brands?: string,
     @Query('hotelFeatures') hotelFeatures?: string,
     @Query('roomFeatures') roomFeatures?: string,
+    @Query('tags') tags?: string,
   ) {
     const filters: any = {};
     if (keyword) filters.keyword = keyword;
@@ -47,6 +49,7 @@ export class PublicHotelsController {
     if (brands) filters.brands = brands.split(',');
     if (hotelFeatures) filters.hotelFeatures = hotelFeatures.split(',');
     if (roomFeatures) filters.roomFeatures = roomFeatures.split(',');
+    if (tags) filters.tags = tags.split(',');
 
     return this.hotelsService.findApprovedHotels(
       parseInt(page || '1', 10),

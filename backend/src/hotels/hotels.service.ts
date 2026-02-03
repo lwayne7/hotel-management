@@ -398,6 +398,7 @@ export class HotelsService {
       brands?: string[];
       hotelFeatures?: string[];
       roomFeatures?: string[];
+      tags?: string[]; // 热门标签筛选
     },
   ) {
     const query = this.hotelsRepository
@@ -474,6 +475,17 @@ export class HotelsService {
       query.andWhere(`(${roomConditions.join(' OR ')})`);
       filters.roomFeatures.forEach((feature, i) => {
         query.setParameter(`roomFeature${i}`, `%${feature}%`);
+      });
+    }
+    
+    // 热门标签筛选 - 搜索设施、描述、房型名称和交通信息
+    if (filters?.tags?.length) {
+      const tagConditions = filters.tags.map((_, i) => 
+        `(hotel.facilities LIKE :tag${i} OR hotel.description LIKE :tag${i} OR hotel.transportation LIKE :tag${i} OR roomTypes.name LIKE :tag${i})`
+      );
+      query.andWhere(`(${tagConditions.join(' AND ')})`); // 使用 AND 确保所有标签都匹配
+      filters.tags.forEach((tag, i) => {
+        query.setParameter(`tag${i}`, `%${tag}%`);
       });
     }
     
