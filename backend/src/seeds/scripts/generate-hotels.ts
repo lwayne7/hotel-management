@@ -1,8 +1,14 @@
 /**
  * 批量生成测试酒店
- * 生成1000家酒店用于筛选功能测试
+ * 生成 10000+ 家酒店用于筛选功能测试
  * 
  * 使用: npx ts-node src/seeds/scripts/generate-hotels.ts
+ * 
+ * 数据分布策略:
+ * - 5个筛选标签均匀分布（各20%）
+ * - 5个星级均匀分布（各20%）
+ * - 30个城市均匀分布
+ * - 价格区间合理分布
  */
 import 'dotenv/config';
 import path from 'path';
@@ -23,8 +29,9 @@ const backendRoot = path.resolve(__dirname, '../../..');
 dotenv.config({ path: path.resolve(backendRoot, '.env.local') });
 dotenv.config({ path: path.resolve(backendRoot, '.env') });
 
-const TOTAL_HOTELS = 1000;
-const BATCH_SIZE = 50;
+// 生成 10000 家酒店，确保数据量足够大
+const TOTAL_HOTELS = 10000;
+const BATCH_SIZE = 100; // 增大批次大小提高效率
 
 async function generateMassHotels() {
     console.log(`🚀 开始生成 ${TOTAL_HOTELS} 家测试酒店...\n`);
