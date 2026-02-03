@@ -67,8 +67,8 @@ function generateHotelName(city: string, starRating: number, index: number): { n
 function generateFacilities(index: number, starRating: number): string[] {
     const facilities: string[] = ['免费WiFi', '24小时前台'];
 
-    // 根据 index % 5 决定主标签（确保5个筛选标签均匀分布）
-    const tagIndex = index % 5;
+    // 根据 index % 6 决定主标签（确保6个筛选标签均匀分布）
+    const tagIndex = index % 6;
     const primaryTag = FILTER_TAGS[tagIndex];
 
     // 总是添加主标签（确保筛选一定能匹配到）
@@ -90,6 +90,9 @@ function generateFacilities(index: number, starRating: number): string[] {
             break;
         case '健身房':
             facilities.push(...randomSubset(FACILITY_GROUPS.fitness.tags.filter(t => t !== primaryTag), 1, 3));
+            break;
+        case '近地铁':
+            // 近地铁酒店通常也有便捷交通
             break;
     }
 

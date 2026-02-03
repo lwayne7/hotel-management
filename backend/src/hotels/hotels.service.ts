@@ -422,9 +422,9 @@ export class HotelsService {
     }
 
     if (filters?.keyword?.trim()) {
-      // 搜索酒店名称、地址、描述和设施标签
+      // 搜索酒店名称、地址、描述、设施标签、交通信息和房型名称
       query.andWhere(
-        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword OR hotel.facilities LIKE :keyword)',
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword OR hotel.facilities LIKE :keyword OR hotel.transportation LIKE :keyword OR roomTypes.name LIKE :keyword)',
         { keyword: `%${filters.keyword.trim()}%` },
       );
     }
