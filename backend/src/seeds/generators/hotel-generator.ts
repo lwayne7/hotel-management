@@ -48,11 +48,14 @@ function getHotelBrandsByStarRating(starRating: number): string[] {
 function generateHotelName(city: string, starRating: number, index: number): { nameCn: string; nameEn: string } {
     const brands = getHotelBrandsByStarRating(starRating);
     const brand = brands[index % brands.length];
-    const suffix = HOTEL_SUFFIXES[index % HOTEL_SUFFIXES.length];
+    const suffixIndex = Math.floor(index / brands.length) % HOTEL_SUFFIXES.length;
+    const suffix = HOTEL_SUFFIXES[suffixIndex];
+    // 为避免重名，在名称后加上编号（当索引较大时）
+    const suffix2 = index >= brands.length * HOTEL_SUFFIXES.length ? `${Math.floor(index / (brands.length * HOTEL_SUFFIXES.length)) + 1}号店` : '';
 
     return {
-        nameCn: `${city}${brand}${suffix}`,
-        nameEn: `${brand} Hotel ${index + 1}`,
+        nameCn: `${city}${brand}${suffix}${suffix2}`,
+        nameEn: `${brand} Hotel ${city} ${index + 1}`,
     };
 }
 
@@ -175,7 +178,7 @@ export function generateHotels(options: GenerateHotelsOptions): SeedHotel[] {
             nameEn,
             address: `${city}市${randomFrom(STREET_NAMES)}${randomInt(1, 999)}号`,
             starRating,
-            openingDate: `${2010 + randomInt(0, 15)}-${String(randomInt(1, 12)).padStart(2, '0')}-01`,
+            openingDate: `${2012 + randomInt(0, 14)}-${String(randomInt(1, 12)).padStart(2, '0')}-01`,
             description: `位于${city}核心地段的优质酒店，设施完善，服务周到。${facilities.slice(0, 3).join('、')}等设施一应俱全。`,
             facilities,
             nearbyAttractions: [`${city}地标`, '商业中心', '地铁站'],
@@ -237,9 +240,9 @@ export function printGenerationStats(hotels: SeedHotel[]): void {
         console.log(`      ${star}星: ${stats.byStar[star] || 0}`);
     }
     console.log('\n   💰 价格分布:');
-    console.log(`      <300元: ${stats.priceRanges.under300}`);
-    console.log(`      300-500元: ${stats.priceRanges['300-500']}`);
-    console.log(`      500-800元: ${stats.priceRanges['500-800']}`);
-    console.log(`      800-1500元: ${stats.priceRanges['800-1500']}`);
-    console.log(`      >1500元: ${stats.priceRanges.over1500}`);
+    console.log(`      <300元: ${stats.priceRanges.under300} (${((stats.priceRanges.under300 / stats.total) * 100).toFixed(1)}%)`);
+    console.log(`      300-500元: ${stats.priceRanges['300-500']} (${((stats.priceRanges['300-500'] / stats.total) * 100).toFixed(1)}%)`);
+    console.log(`      500-800元: ${stats.priceRanges['500-800']} (${((stats.priceRanges['500-800'] / stats.total) * 100).toFixed(1)}%)`);
+    console.log(`      800-1500元: ${stats.priceRanges['800-1500']} (${((stats.priceRanges['800-1500'] / stats.total) * 100).toFixed(1)}%)`);
+    console.log(`      >1500元: ${stats.priceRanges.over1500} (${((stats.priceRanges.over1500 / stats.total) * 100).toFixed(1)}%)`);
 }
