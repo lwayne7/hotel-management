@@ -53,6 +53,12 @@ export class RoomType {
   @Column({ type: 'simple-json', nullable: true })
   amenities: string[];
 
+  @Column({ type: 'text', nullable: true })
+  imageUrl: string;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
   @Column()
   hotelId: number;
 

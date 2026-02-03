@@ -28,6 +28,7 @@ async function bootstrap() {
             !origin ||
             /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
             /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(origin) ||
+            /^https:\/\/.*\.vercel\.app$/.test(origin) ||
             /^https:\/\/servicewechat\.com$/.test(origin);
           callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
         }

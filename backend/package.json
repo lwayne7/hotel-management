@@ -18,8 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed": "ts-node src/seeds/seed.ts",
-    "generate-hotels": "ts-node src/seeds/generate-hotels.ts"
+    "seed": "ts-node src/seeds/scripts/seed.ts",
+    "generate-hotels": "ts-node src/seeds/scripts/generate-hotels.ts",
+    "update-images": "ts-node src/seeds/scripts/update-images.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -1,8 +1,9 @@
 /**
  * 酒店生成器
  * 批量生成测试酒店数据，确保筛选标签均匀分布
+ * 使用 hotelId + cityIndex 作为种子确保不同城市有不同图片
  */
-import { SeedHotel, SeedRoomType, SeedHotelImage } from '../config/types';
+import { SeedHotel, SeedRoomType } from '../config/types';
 import {
     ALL_CITIES,
     FACILITY_GROUPS,
@@ -13,11 +14,8 @@ import {
     STREET_NAMES,
 } from '../config/constants';
 import {
-    HOTEL_EXTERIOR_IMAGES,
-    HOTEL_ROOM_IMAGES,
-    HOTEL_LOBBY_IMAGES,
-    HOTEL_POOL_IMAGES,
     getRoomImageByType,
+    generateHotelImages,
 } from '../images/hotel-images';
 
 // ========== 工具函数 ==========
@@ -110,7 +108,7 @@ function generateFacilities(index: number, starRating: number): string[] {
 
 // ========== 房型生成 ==========
 
-function generateRoomTypes(hotelIndex: number, starRating: number): SeedRoomType[] {
+function generateRoomTypes(hotelIndex: number, starRating: number, cityIndex: number = 0): SeedRoomType[] {
     const priceMultiplier = starRating * 0.4 + 0.6; // 1星=1.0, 5星=2.6
     const roomCount = randomInt(2, 4);
 
@@ -139,67 +137,9 @@ function generateRoomTypes(hotelIndex: number, starRating: number): SeedRoomType
             bedType: config.bedType,
             roomSize,
             description: `${config.name}，${config.bedType}，面积${roomSize}㎡`,
-            imageUrl: getRoomImageByType(config.name, hotelIndex + roomIndex),
+            imageUrl: getRoomImageByType(config.name, hotelIndex, roomIndex, cityIndex),
         };
     });
-}
-
-// ========== 图片生成 ==========
-
-/**
- * 基于种子的伪随机数生成器
- */
-function seededRandom(seed: number): () => number {
-    let state = seed;
-    return () => {
-        state = (state * 1103515245 + 12345) & 0x7fffffff;
-        return state / 0x7fffffff;
-    };
-}
-
-function generateImages(hotelIndex: number, count: number = 3): SeedHotelImage[] {
-    const images: SeedHotelImage[] = [];
-    const descriptions = ['酒店外观', '酒店大堂', '豪华客房', '泳池', '餐厅'];
-
-    // 使用hotelIndex作为种子，确保每个酒店有独特的图片组合
-    const rng = seededRandom(hotelIndex * 31 + 17);
-
-    const exteriorIdx = Math.floor(rng() * HOTEL_EXTERIOR_IMAGES.length);
-    const lobbyIdx = Math.floor(rng() * HOTEL_LOBBY_IMAGES.length);
-    const roomIdx = Math.floor(rng() * HOTEL_ROOM_IMAGES.length);
-    const poolIdx = Math.floor(rng() * HOTEL_POOL_IMAGES.length);
-
-    // 外观
-    images.push({
-        imageUrl: HOTEL_EXTERIOR_IMAGES[exteriorIdx],
-        description: descriptions[0],
-    });
-
-    // 大堂或客房
-    if (count >= 2) {
-        images.push({
-            imageUrl: HOTEL_LOBBY_IMAGES[lobbyIdx],
-            description: descriptions[1],
-        });
-    }
-
-    // 客房
-    if (count >= 3) {
-        images.push({
-            imageUrl: HOTEL_ROOM_IMAGES[roomIdx],
-            description: descriptions[2],
-        });
-    }
-
-    // 泳池
-    if (count >= 4) {
-        images.push({
-            imageUrl: HOTEL_POOL_IMAGES[poolIdx],
-            description: descriptions[3],
-        });
-    }
-
-    return images;
 }
 
 // ========== 主生成函数 ==========
@@ -220,13 +160,15 @@ export function generateHotels(options: GenerateHotelsOptions): SeedHotel[] {
 
     for (let i = 0; i < count; i++) {
         const index = startIndex + i;
-        const city = ALL_CITIES[index % ALL_CITIES.length];
+        const cityIndex = index % ALL_CITIES.length;
+        const city = ALL_CITIES[cityIndex];
         const starRating = ((index % 5) + 1) as 1 | 2 | 3 | 4 | 5;
 
         const { nameCn, nameEn } = generateHotelName(city, starRating, index);
         const facilities = generateFacilities(index, starRating);
-        const roomTypes = generateRoomTypes(index, starRating);
-        const images = generateImages(index, randomInt(2, 4));
+        const roomTypes = generateRoomTypes(index, starRating, cityIndex);
+        // 使用新的生成函数，传入 hotelIndex 和 cityIndex
+        const images = generateHotelImages(index, cityIndex, randomInt(2, 4));
 
         hotels.push({
             nameCn,
