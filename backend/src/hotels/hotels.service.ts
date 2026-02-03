@@ -434,7 +434,7 @@ export class HotelsService {
       });
     }
     if (filters?.starRating != null && filters.starRating > 0) {
-      query.andWhere('hotel.starRating >= :starRating', {
+      query.andWhere('hotel.starRating = :starRating', {
         starRating: filters.starRating,
       });
     }
