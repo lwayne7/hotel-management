@@ -24,7 +24,7 @@ async function bootstrap() {
       const allowed =
         !origin ||
         /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-        /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(origin);
+        /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
       callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
     },
     credentials: true,
