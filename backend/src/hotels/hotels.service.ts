@@ -458,10 +458,10 @@ export class HotelsService {
       });
     }
     
-    // 酒店特色筛选 - 搜索 description 和 facilities 字段
+    // 酒店特色筛选 - 搜索 description、facilities 和 transportation 字段
     if (filters?.hotelFeatures?.length) {
       const featureConditions = filters.hotelFeatures.map((_, i) => 
-        `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i})`
+        `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i} OR hotel.transportation LIKE :hotelFeature${i})`
       );
       query.andWhere(`(${featureConditions.join(' OR ')})`);
       filters.hotelFeatures.forEach((feature, i) => {
@@ -483,7 +483,8 @@ export class HotelsService {
       const tagConditions = filters.tags.map((_, i) => 
         `(hotel.facilities LIKE :tag${i} OR hotel.description LIKE :tag${i} OR hotel.transportation LIKE :tag${i} OR roomTypes.name LIKE :tag${i})`
       );
-      query.andWhere(`(${tagConditions.join(' AND ')})`); // 使用 AND 确保所有标签都匹配
+      // 使用 OR，任一标签命中即可，避免过于严格导致“筛不到结果”
+      query.andWhere(`(${tagConditions.join(' OR ')})`);
       filters.tags.forEach((tag, i) => {
         query.setParameter(`tag${i}`, `%${tag}%`);
       });
