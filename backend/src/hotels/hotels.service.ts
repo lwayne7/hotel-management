@@ -398,6 +398,7 @@ export class HotelsService {
       brands?: string[];
       hotelFeatures?: string[];
       roomFeatures?: string[];
+      tags?: string[]; // 热门标签筛选
     },
   ) {
     const query = this.hotelsRepository
@@ -422,9 +423,9 @@ export class HotelsService {
     }
 
     if (filters?.keyword?.trim()) {
-      // 搜索酒店名称、地址、描述和设施标签
+      // 搜索酒店名称、地址、描述、设施标签、交通信息和房型名称
       query.andWhere(
-        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword OR hotel.facilities LIKE :keyword)',
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword OR hotel.description LIKE :keyword OR hotel.facilities LIKE :keyword OR hotel.transportation LIKE :keyword OR roomTypes.name LIKE :keyword)',
         { keyword: `%${filters.keyword.trim()}%` },
       );
     }
@@ -457,10 +458,10 @@ export class HotelsService {
       });
     }
     
-    // 酒店特色筛选 - 搜索 description 和 facilities 字段
+    // 酒店特色筛选 - 搜索 description、facilities 和 transportation 字段
     if (filters?.hotelFeatures?.length) {
       const featureConditions = filters.hotelFeatures.map((_, i) => 
-        `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i})`
+        `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i} OR hotel.transportation LIKE :hotelFeature${i})`
       );
       query.andWhere(`(${featureConditions.join(' OR ')})`);
       filters.hotelFeatures.forEach((feature, i) => {
@@ -474,6 +475,18 @@ export class HotelsService {
       query.andWhere(`(${roomConditions.join(' OR ')})`);
       filters.roomFeatures.forEach((feature, i) => {
         query.setParameter(`roomFeature${i}`, `%${feature}%`);
+      });
+    }
+    
+    // 热门标签筛选 - 搜索设施、描述、房型名称和交通信息
+    if (filters?.tags?.length) {
+      const tagConditions = filters.tags.map((_, i) => 
+        `(hotel.facilities LIKE :tag${i} OR hotel.description LIKE :tag${i} OR hotel.transportation LIKE :tag${i} OR roomTypes.name LIKE :tag${i})`
+      );
+      // 使用 OR，任一标签命中即可，避免过于严格导致“筛不到结果”
+      query.andWhere(`(${tagConditions.join(' OR ')})`);
+      filters.tags.forEach((tag, i) => {
+        query.setParameter(`tag${i}`, `%${tag}%`);
       });
     }
     
