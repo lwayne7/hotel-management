@@ -36,8 +36,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Swagger 配置
-  const config = new DocumentBuilder()
+  const swaggerConfig = new DocumentBuilder()
     .setTitle('易宿酒店管理系统 API')
     .setDescription('酒店预订平台管理端 API 文档')
     .setVersion('1.0')
@@ -46,21 +45,20 @@ async function bootstrap() {
     .addTag('酒店', '酒店信息管理')
     .addTag('审核', '酒店审核管理')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
-  // 启动信息：便于定位“请求到空库/命中错误数据库”
   try {
-    const config = app.get(ConfigService);
-    const dbType = config.get<string>('database.type');
+    const configService = app.get(ConfigService);
+    const dbType = configService.get<string>('database.type');
     if (dbType === 'better-sqlite3') {
-      console.log(`🗄️  DB: sqlite (${config.get('database.database')})`);
+      console.log(`🗄️  DB: sqlite (${configService.get('database.database')})`);
     } else {
       console.log(
-        `🗄️  DB: postgres (${config.get('database.host')}:${config.get('database.port')}/${config.get('database.database')} user=${config.get('database.username')})`,
+        `🗄️  DB: postgres (${configService.get('database.host')}:${configService.get('database.port')}/${configService.get('database.database')})`,
       );
     }
   } catch {

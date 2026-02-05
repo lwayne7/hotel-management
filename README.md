@@ -278,7 +278,7 @@ OSS_BUCKET=your_bucket
 cd backend
 npm run seed
 ```
-创建测试用户和 10 家精选演示酒店。
+创建测试用户和 20 家精选演示酒店。
 
 ### 批量生成测试酒店
 ```bash

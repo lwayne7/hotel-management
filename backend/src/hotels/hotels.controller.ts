@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Patch,
-  Put,
   Param,
   Delete,
   Query,
@@ -45,6 +44,14 @@ export class HotelsController {
     return this.hotelsService.create(createHotelDto, user.id);
   }
 
+  @Get('statistics')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MERCHANT)
+  @ApiOperation({ summary: '获取商户统计数据' })
+  async getMerchantStatistics(@CurrentUser() user: { id: number }) {
+    return this.hotelsService.getMerchantStatistics(user.id);
+  }
+
   @Get('my')
   @UseGuards(RolesGuard)
   @Roles(UserRole.MERCHANT)
@@ -60,37 +67,8 @@ export class HotelsController {
   ) {
     return this.hotelsService.findByMerchant(
       user.id,
-      page || 1,
-      pageSize || 10,
-      status,
-    );
-  }
-
-  @Get('statistics')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MERCHANT)
-  @ApiOperation({ summary: '获取商户统计数据' })
-  async getMerchantStatistics(@CurrentUser() user: { id: number }) {
-    return this.hotelsService.getMerchantStatistics(user.id);
-  }
-
-  @Get()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MERCHANT)
-  @ApiOperation({ summary: '获取我的酒店列表（商户）' })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'pageSize', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: HotelStatus })
-  async listMyHotels(
-    @CurrentUser() user: { id: number },
-    @Query('page') page?: number,
-    @Query('pageSize') pageSize?: number,
-    @Query('status') status?: HotelStatus,
-  ) {
-    return this.hotelsService.findByMerchant(
-      user.id,
-      page || 1,
-      pageSize || 10,
+      page ?? 1,
+      pageSize ?? 10,
       status,
     );
   }
@@ -111,18 +89,6 @@ export class HotelsController {
   @Roles(UserRole.MERCHANT)
   @ApiOperation({ summary: '更新酒店信息（商户）' })
   async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateHotelDto: UpdateHotelDto,
-    @CurrentUser() user: { id: number },
-  ) {
-    return this.hotelsService.update(id, updateHotelDto, user.id);
-  }
-
-  @Put(':id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.MERCHANT)
-  @ApiOperation({ summary: '更新酒店信息（商户）' })
-  async replace(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateHotelDto: UpdateHotelDto,
     @CurrentUser() user: { id: number },

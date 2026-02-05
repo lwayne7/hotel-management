@@ -37,24 +37,26 @@ export class PublicHotelsController {
     @Query('roomFeatures') roomFeatures?: string,
     @Query('tags') tags?: string,
   ) {
-    const filters: any = {};
+    type Filters = Parameters<HotelsService['findApprovedHotels']>[2];
+    const filters: NonNullable<Filters> = {};
     if (keyword) filters.keyword = keyword;
     if (city) filters.city = city;
-    if (starRating) filters.starRating = parseInt(starRating, 10);
-    if (minPrice) filters.minPrice = parseFloat(minPrice);
-    if (maxPrice) filters.maxPrice = parseFloat(maxPrice);
+    if (starRating != null) filters.starRating = parseInt(starRating, 10);
+    if (minPrice != null) filters.minPrice = parseFloat(minPrice);
+    if (maxPrice != null) filters.maxPrice = parseFloat(maxPrice);
     if (sortBy) filters.sortBy = sortBy;
-    // 综合筛选参数
-    if (facilities) filters.facilities = facilities.split(',');
-    if (brands) filters.brands = brands.split(',');
-    if (hotelFeatures) filters.hotelFeatures = hotelFeatures.split(',');
-    if (roomFeatures) filters.roomFeatures = roomFeatures.split(',');
-    if (tags) filters.tags = tags.split(',');
+    if (facilities) filters.facilities = facilities.split(',').map((s) => s.trim()).filter(Boolean);
+    if (brands) filters.brands = brands.split(',').map((s) => s.trim()).filter(Boolean);
+    if (hotelFeatures) filters.hotelFeatures = hotelFeatures.split(',').map((s) => s.trim()).filter(Boolean);
+    if (roomFeatures) filters.roomFeatures = roomFeatures.split(',').map((s) => s.trim()).filter(Boolean);
+    if (tags) filters.tags = tags.split(',').map((s) => s.trim()).filter(Boolean);
 
+    const pageNum = parseInt(page ?? '1', 10) || 1;
+    const pageSizeNum = parseInt(pageSize ?? '10', 10) || 10;
     return this.hotelsService.findApprovedHotels(
-      parseInt(page || '1', 10),
-      parseInt(pageSize || '10', 10),
-      Object.keys(filters).length ? filters : undefined,
+      pageNum,
+      pageSizeNum,
+      Object.keys(filters).length > 0 ? filters : undefined,
     );
   }
 
