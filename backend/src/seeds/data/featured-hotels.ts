@@ -1,17 +1,30 @@
 /**
  * 精选演示酒店数据
  * 包含真实、完整的酒店信息用于演示
+ * 
+ * 优化策略：
+ * 1. 覆盖前端所有筛选项（热门筛选、酒店特色、客房特色、设施服务、品牌）
+ * 2. 确保每张图片都不一样（使用图片生成函数）
+ * 3. 确保数据分布合理（每个城市、星级、价格区间都有代表）
  */
 import { SeedHotel } from '../config/types';
 import {
-    HOTEL_EXTERIOR_IMAGES,
-    HOTEL_ROOM_IMAGES,
-    getRoomImageByType
+    generateHotelImages,
+    getRoomImageByType,
 } from '../images/hotel-images';
 
 /**
- * 20家精选演示酒店
+ * 精选酒店使用的图片ID偏移量
+ * 从100001开始，避免与批量生成酒店(从1开始)的图片ID冲突
+ */
+const FEATURED_ID_OFFSET = 100000;
+
+/**
+ * 精选演示酒店（10家）
  * 覆盖不同城市、星级、价格区间和设施标签
+ * 确保对齐前端所有筛选项
+ * 
+ * 注意：图片生成使用 FEATURED_ID_OFFSET + index 作为ID，避免与批量生成酒店图片重复
  */
 export const FEATURED_HOTELS: SeedHotel[] = [
     // ========== 五星豪华酒店 ==========
@@ -27,13 +40,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁10号线亮马桥站步行5分钟', '距首都机场30分钟车程'],
         status: 'approved',
         roomTypes: [
-            { name: '豪华大床房', price: 899, originalPrice: 1099, maxGuests: 2, bedType: '1.8m大床', roomSize: 40 },
-            { name: '行政套房', price: 1599, originalPrice: 1999, maxGuests: 3, bedType: '1.8m大床+沙发床', roomSize: 65 },
+            {
+                name: '豪华大床房',
+                price: 899,
+                originalPrice: 1099,
+                maxGuests: 2,
+                bedType: '1.8m大床',
+                roomSize: 40,
+                imageUrl: getRoomImageByType('豪华大床房', FEATURED_ID_OFFSET + 1, 0, 0),
+            },
+            {
+                name: '行政套房',
+                price: 1599,
+                originalPrice: 1999,
+                maxGuests: 3,
+                bedType: '1.8m大床+沙发床',
+                roomSize: 65,
+                imageUrl: getRoomImageByType('行政套房', FEATURED_ID_OFFSET + 1, 1, 0),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[0], description: '酒店外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[0], description: '豪华客房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 1, 0, 3), // 北京=0, 使用大偏移ID避免与批量酒店冲突
     },
     {
         nameCn: '上海外滩华尔道夫酒店',
@@ -47,13 +73,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁2号线南京东路站步行5分钟', '距浦东机场45分钟车程'],
         status: 'approved',
         roomTypes: [
-            { name: '豪华江景房', price: 2888, originalPrice: 3588, maxGuests: 2, bedType: '2m大床', roomSize: 55 },
-            { name: '总统套房', price: 8888, originalPrice: 9999, maxGuests: 4, bedType: '2m大床', roomSize: 150 },
+            {
+                name: '豪华江景房',
+                price: 2888,
+                originalPrice: 3588,
+                maxGuests: 2,
+                bedType: '2m大床',
+                roomSize: 55,
+                imageUrl: getRoomImageByType('豪华大床房', FEATURED_ID_OFFSET + 2, 0, 1),
+            },
+            {
+                name: '总统套房',
+                price: 8888,
+                originalPrice: 9999,
+                maxGuests: 4,
+                bedType: '2m大床',
+                roomSize: 150,
+                imageUrl: getRoomImageByType('总统套房', FEATURED_ID_OFFSET + 2, 1, 1),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[1], description: '酒店大堂' },
-            { imageUrl: HOTEL_ROOM_IMAGES[1], description: '豪华江景房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 2, 1, 4), // 上海=1
     },
 
     // ========== 亲子主题酒店 ==========
@@ -69,13 +108,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁11号线迪士尼站', '距浦东机场约30分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '米奇主题房', price: 1288, originalPrice: 1588, maxGuests: 4, bedType: '1.8m大床+儿童床', roomSize: 48 },
-            { name: '公主城堡套房', price: 2588, originalPrice: 2988, maxGuests: 4, bedType: '2m大床+儿童床', roomSize: 75 },
+            {
+                name: '米奇主题房',
+                price: 1288,
+                originalPrice: 1588,
+                maxGuests: 4,
+                bedType: '1.8m大床+儿童床',
+                roomSize: 48,
+                imageUrl: getRoomImageByType('亲子主题房', FEATURED_ID_OFFSET + 3, 0, 1),
+            },
+            {
+                name: '公主城堡套房',
+                price: 2588,
+                originalPrice: 2988,
+                maxGuests: 4,
+                bedType: '2m大床+儿童床',
+                roomSize: 75,
+                imageUrl: getRoomImageByType('亲子主题房', FEATURED_ID_OFFSET + 3, 1, 1),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[2], description: '酒店外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[2], description: '亲子主题房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 3, 1, 3), // 上海=1
     },
     {
         nameCn: '广州长隆熊猫酒店',
@@ -89,13 +141,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁3号线汉溪长隆站', '距白云机场约40分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '熊猫家庭房', price: 988, originalPrice: 1288, maxGuests: 4, bedType: '1.8m大床+儿童床', roomSize: 45 },
-            { name: '白虎亲子套房', price: 1388, originalPrice: 1688, maxGuests: 5, bedType: '2m大床+双层儿童床', roomSize: 65 },
+            {
+                name: '熊猫家庭房',
+                price: 988,
+                originalPrice: 1288,
+                maxGuests: 4,
+                bedType: '1.8m大床+儿童床',
+                roomSize: 45,
+                imageUrl: getRoomImageByType('家庭房', FEATURED_ID_OFFSET + 4, 0, 2),
+            },
+            {
+                name: '白虎亲子套房',
+                price: 1388,
+                originalPrice: 1688,
+                maxGuests: 5,
+                bedType: '2m大床+双层儿童床',
+                roomSize: 65,
+                imageUrl: getRoomImageByType('亲子主题房', FEATURED_ID_OFFSET + 4, 1, 2),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[3], description: '酒店外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[3], description: '熊猫主题房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 4, 2, 3), // 广州=2
     },
 
     // ========== 含早餐酒店 ==========
@@ -111,13 +176,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁4号线大雁塔站', '距咸阳机场约50分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '唐风大床房', price: 498, originalPrice: 598, maxGuests: 2, bedType: '1.8m大床', roomSize: 35 },
-            { name: '唐风套房', price: 888, originalPrice: 1088, maxGuests: 3, bedType: '2m大床+客厅', roomSize: 60 },
+            {
+                name: '唐风大床房',
+                price: 498,
+                originalPrice: 598,
+                maxGuests: 2,
+                bedType: '1.8m大床',
+                roomSize: 35,
+                imageUrl: getRoomImageByType('大床房', FEATURED_ID_OFFSET + 5, 0, 3),
+            },
+            {
+                name: '唐风套房',
+                price: 888,
+                originalPrice: 1088,
+                maxGuests: 3,
+                bedType: '2m大床+客厅',
+                roomSize: 60,
+                imageUrl: getRoomImageByType('商务套房', FEATURED_ID_OFFSET + 5, 1, 3),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[4], description: '唐风建筑' },
-            { imageUrl: HOTEL_ROOM_IMAGES[4], description: '唐风客房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 5, 3, 3), // 西安=3
     },
 
     // ========== 免费停车场酒店 ==========
@@ -133,13 +211,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['自驾便捷', '距萧山机场约50分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '园景别墅', price: 2688, originalPrice: 3288, maxGuests: 2, bedType: '2m大床', roomSize: 90 },
-            { name: '湖景别墅', price: 3888, originalPrice: 4688, maxGuests: 3, bedType: '2m大床', roomSize: 120 },
+            {
+                name: '园景别墅',
+                price: 2688,
+                originalPrice: 3288,
+                maxGuests: 2,
+                bedType: '2m大床',
+                roomSize: 90,
+                imageUrl: getRoomImageByType('行政套房', FEATURED_ID_OFFSET + 6, 0, 4),
+            },
+            {
+                name: '湖景别墅',
+                price: 3888,
+                originalPrice: 4688,
+                maxGuests: 3,
+                bedType: '2m大床',
+                roomSize: 120,
+                imageUrl: getRoomImageByType('总统套房', FEATURED_ID_OFFSET + 6, 1, 4),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[5], description: '别墅外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[5], description: '别墅客房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 6, 4, 4), // 杭州=4
     },
 
     // ========== 健身房酒店 ==========
@@ -155,13 +246,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁1号线国贸站', '距首都机场约40分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '豪华大床房', price: 988, originalPrice: 1288, maxGuests: 2, bedType: '2m大床', roomSize: 42 },
-            { name: '行政套房', price: 1888, originalPrice: 2288, maxGuests: 3, bedType: '2m大床+客厅', roomSize: 75 },
+            {
+                name: '豪华大床房',
+                price: 988,
+                originalPrice: 1288,
+                maxGuests: 2,
+                bedType: '2m大床',
+                roomSize: 42,
+                imageUrl: getRoomImageByType('豪华大床房', FEATURED_ID_OFFSET + 7, 0, 0),
+            },
+            {
+                name: '行政套房',
+                price: 1888,
+                originalPrice: 2288,
+                maxGuests: 3,
+                bedType: '2m大床+客厅',
+                roomSize: 75,
+                imageUrl: getRoomImageByType('行政套房', FEATURED_ID_OFFSET + 7, 1, 0),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[6], description: '酒店外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[6], description: '豪华客房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 7, 0, 3), // 北京=0
     },
 
     // ========== 经济型酒店（低价位覆盖） ==========
@@ -172,18 +276,31 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         starRating: 3,
         openingDate: '2018-05-01',
         description: '外滩商圈高性价比选择，简约舒适，步行可达南京路。',
-        facilities: ['免费WiFi', '24小时前台', '健身房'],
+        facilities: ['免费WiFi', '24小时前台', '健身房', '近地铁'],
         nearbyAttractions: ['外滩', '南京路', '人民广场'],
-        transportation: ['地铁2号线南京东路站', '距虹桥机场约40分钟'],
+        transportation: ['地铁2号线南京东路站步行3分钟', '距虹桥机场约40分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '标准间', price: 298, originalPrice: 398, maxGuests: 2, bedType: '1.5m双床', roomSize: 22 },
-            { name: '大床房', price: 328, originalPrice: 428, maxGuests: 2, bedType: '1.8m大床', roomSize: 25 },
+            {
+                name: '标准间',
+                price: 298,
+                originalPrice: 398,
+                maxGuests: 2,
+                bedType: '1.5m双床',
+                roomSize: 22,
+                imageUrl: getRoomImageByType('标准间', FEATURED_ID_OFFSET + 8, 0, 1),
+            },
+            {
+                name: '大床房',
+                price: 328,
+                originalPrice: 428,
+                maxGuests: 2,
+                bedType: '1.8m大床',
+                roomSize: 25,
+                imageUrl: getRoomImageByType('大床房', FEATURED_ID_OFFSET + 8, 1, 1),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[7], description: '酒店外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[7], description: '标准客房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 8, 1, 2), // 上海=1
     },
     {
         nameCn: '成都亚朵酒店（春熙路店）',
@@ -197,13 +314,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['地铁2号线春熙路站', '距双流机场约40分钟'],
         status: 'approved',
         roomTypes: [
-            { name: '大床房', price: 388, originalPrice: 488, maxGuests: 2, bedType: '1.8m大床', roomSize: 28 },
-            { name: '双床房', price: 418, originalPrice: 518, maxGuests: 2, bedType: '1.5m双床', roomSize: 30 },
+            {
+                name: '大床房',
+                price: 388,
+                originalPrice: 488,
+                maxGuests: 2,
+                bedType: '1.8m大床',
+                roomSize: 28,
+                imageUrl: getRoomImageByType('大床房', FEATURED_ID_OFFSET + 9, 0, 5),
+            },
+            {
+                name: '双床房',
+                price: 418,
+                originalPrice: 518,
+                maxGuests: 2,
+                bedType: '1.5m双床',
+                roomSize: 30,
+                imageUrl: getRoomImageByType('双床房', FEATURED_ID_OFFSET + 9, 1, 5),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[8], description: '酒店外观' },
-            { imageUrl: HOTEL_ROOM_IMAGES[8], description: '阅读主题房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 9, 5, 3), // 成都=5
     },
 
     // ========== 度假村酒店 ==========
@@ -219,13 +349,26 @@ export const FEATURED_HOTELS: SeedHotel[] = [
         transportation: ['距凤凰机场约30分钟', '酒店提供接送'],
         status: 'approved',
         roomTypes: [
-            { name: '海景豪华房', price: 1888, originalPrice: 2288, maxGuests: 2, bedType: '2m大床', roomSize: 58 },
-            { name: '海景套房', price: 3888, originalPrice: 4688, maxGuests: 4, bedType: '2m大床+客厅', roomSize: 95 },
+            {
+                name: '海景豪华房',
+                price: 1888,
+                originalPrice: 2288,
+                maxGuests: 2,
+                bedType: '2m大床',
+                roomSize: 58,
+                imageUrl: getRoomImageByType('豪华大床房', FEATURED_ID_OFFSET + 10, 0, 14),
+            },
+            {
+                name: '海景套房',
+                price: 3888,
+                originalPrice: 4688,
+                maxGuests: 4,
+                bedType: '2m大床+客厅',
+                roomSize: 95,
+                imageUrl: getRoomImageByType('行政套房', FEATURED_ID_OFFSET + 10, 1, 14),
+            },
         ],
-        images: [
-            { imageUrl: HOTEL_EXTERIOR_IMAGES[9], description: '度假村全景' },
-            { imageUrl: HOTEL_ROOM_IMAGES[9], description: '海景套房' },
-        ],
+        images: generateHotelImages(FEATURED_ID_OFFSET + 10, 14, 4), // 三亚=14
     },
 ];
 

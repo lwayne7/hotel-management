@@ -20,7 +20,10 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node src/seeds/scripts/seed.ts",
     "generate-hotels": "ts-node src/seeds/scripts/generate-hotels.ts",
-    "update-images": "ts-node src/seeds/scripts/update-images.ts"
+    "update-images": "ts-node src/seeds/scripts/update-images.ts",
+    "validate-image-urls": "ts-node src/seeds/scripts/validate-image-urls.ts",
+    "clear-hotels": "ts-node src/seeds/scripts/clear-hotels.ts",
+    "reset-hotels": "npm run clear-hotels && npm run seed && npm run generate-hotels"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

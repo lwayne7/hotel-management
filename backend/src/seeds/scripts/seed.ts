@@ -19,7 +19,8 @@ import {
 } from '../config/database';
 import { SEED_USERS, printUserCredentials } from '../data/users';
 import { FEATURED_HOTELS } from '../data/featured-hotels';
-import { getRoomImageByType } from '../images/hotel-images';
+import { getRoomImageByType, generateHotelImages } from '../images/hotel-images';
+import { ALL_CITIES } from '../config/constants';
 
 // 加载环境变量
 const backendRoot = path.resolve(__dirname, '../../..');
@@ -80,23 +81,28 @@ async function seed() {
                 merchantId: merchant.id,
             });
             const savedHotel = await hotelRepository.save(hotel);
+            const hotelId = savedHotel.id;
+            const cityIndex = ALL_CITIES.findIndex((c) => hotelData.nameCn.startsWith(c));
+            const safeCityIndex = cityIndex >= 0 ? cityIndex : 0;
 
-            // 创建房型
+            // 创建房型（房型图用 hotelId 保证唯一）
             for (let j = 0; j < roomTypes.length; j++) {
                 const rt = roomTypes[j];
                 await roomTypeRepository.save({
                     ...rt,
-                    imageUrl: rt.imageUrl || getRoomImageByType(rt.name, i + j),
-                    hotelId: savedHotel.id,
+                    imageUrl: rt.imageUrl || getRoomImageByType(rt.name, hotelId, j, safeCityIndex),
+                    hotelId,
                 });
             }
 
-            // 创建图片
-            for (let k = 0; k < images.length; k++) {
+            // 使用真实 hotelId 生成酒店图片，避免不同酒店主图重复
+            const imageCount = Math.min(4, Math.max(2, images.length));
+            const imagesToSave = generateHotelImages(hotelId, safeCityIndex, imageCount);
+            for (let k = 0; k < imagesToSave.length; k++) {
                 await imageRepository.save({
-                    ...images[k],
+                    ...imagesToSave[k],
                     sortOrder: k,
-                    hotelId: savedHotel.id,
+                    hotelId,
                 });
             }
         }

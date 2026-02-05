@@ -28,7 +28,17 @@ import {
     User
 } from '../config/database';
 import { generateHotels, printGenerationStats } from '../generators/hotel-generator';
+import { generateHotelImages } from '../images/hotel-images';
+import { ALL_CITIES } from '../config/constants';
 import { DataSource } from 'typeorm';
+
+/** 从酒店中文名解析城市索引，用于按真实 id 重新生成图片 */
+function getCityIndexFromName(nameCn: string): number {
+    for (let i = 0; i < ALL_CITIES.length; i++) {
+        if (nameCn.startsWith(ALL_CITIES[i])) return i;
+    }
+    return 0;
+}
 
 // 加载环境变量
 const backendRoot = path.resolve(__dirname, '../../..');
@@ -89,7 +99,7 @@ async function insertHotelsBatch(
                 status: HotelStatus.APPROVED,
                 merchantId,
             });
-            const hotelId = result.identifiers[0].id;
+            const hotelId = result.identifiers[0].id as number;
 
             // 批量插入房型
             if (roomTypes.length > 0) {
@@ -102,11 +112,15 @@ async function insertHotelsBatch(
                 );
             }
 
-            // 批量插入图片
-            if (images.length > 0) {
+            // 使用真实 hotelId 重新生成图片，避免不同酒店主图重复
+            const cityIndex = getCityIndexFromName(hotelData.nameCn);
+            const imageCount = Math.min(4, Math.max(2, images.length));
+            const imagesToSave = generateHotelImages(hotelId, cityIndex, imageCount);
+
+            if (imagesToSave.length > 0) {
                 await manager.insert(
                     HotelImage,
-                    images.map((img, i) => ({
+                    imagesToSave.map((img, i) => ({
                         ...img,
                         sortOrder: i,
                         hotelId,

@@ -9,6 +9,56 @@ import { Hotel, HotelStatus } from './entities/hotel.entity';
 import { RoomType } from './entities/room-type.entity';
 import { HotelImage } from './entities/hotel-image.entity';
 import { CreateHotelDto, UpdateHotelDto } from './dto';
+import { getPlaceholderImageUrl } from './constants/placeholder-images';
+
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Number(value);
+  return Number.NaN;
+}
+
+function sortRoomTypesByPrice(roomTypes: unknown[]): void {
+  roomTypes.sort((a: unknown, b: unknown) => {
+    const aPrice = toNumber((a as { price?: unknown })?.price);
+    const bPrice = toNumber((b as { price?: unknown })?.price);
+    if (Number.isNaN(aPrice) && Number.isNaN(bPrice)) return 0;
+    if (Number.isNaN(aPrice)) return 1;
+    if (Number.isNaN(bPrice)) return -1;
+    return aPrice - bPrice;
+  });
+}
+
+function sortImagesByOrder(images: unknown[]): void {
+  images.sort((a: unknown, b: unknown) => {
+    const aOrder = typeof (a as { sortOrder?: number })?.sortOrder === 'number'
+      ? (a as { sortOrder: number }).sortOrder
+      : Number((a as { sortOrder?: unknown })?.sortOrder ?? 0);
+    const bOrder = typeof (b as { sortOrder?: number })?.sortOrder === 'number'
+      ? (b as { sortOrder: number }).sortOrder
+      : Number((b as { sortOrder?: unknown })?.sortOrder ?? 0);
+    return aOrder - bOrder;
+  });
+}
+
+/** 确保酒店有主图：无图时用房型图或占位图，并设置 coverImageUrl */
+function ensureCoverImage(hotel: Hotel & { coverImageUrl?: string }): void {
+  const hasValidImage = Array.isArray(hotel.images) &&
+    hotel.images.some((img: { imageUrl?: string }) => img?.imageUrl?.trim?.());
+  if (!hasValidImage && Array.isArray(hotel.roomTypes)) {
+    const first = hotel.roomTypes.find((r: { imageUrl?: string }) => r?.imageUrl?.trim?.());
+    if (first?.imageUrl?.trim?.()) {
+      hotel.images = [{ id: 0, imageUrl: first.imageUrl.trim(), description: '房型', sortOrder: 0 } as HotelImage];
+    }
+  }
+  if (!Array.isArray(hotel.images) || !hotel.images.some((img: { imageUrl?: string }) => img?.imageUrl?.trim?.())) {
+    hotel.images = [
+      { id: 0, imageUrl: getPlaceholderImageUrl(hotel.id), description: '酒店外观', sortOrder: 0 } as HotelImage,
+    ];
+  }
+  const firstImage = hotel.images?.[0];
+  const mainUrl = (firstImage?.imageUrl?.trim?.() ?? '').trim();
+  hotel.coverImageUrl = mainUrl || getPlaceholderImageUrl(hotel.id);
+}
 
 @Injectable()
 export class HotelsService {
@@ -19,35 +69,12 @@ export class HotelsService {
     private roomTypesRepository: Repository<RoomType>,
     @InjectRepository(HotelImage)
     private hotelImagesRepository: Repository<HotelImage>,
-  ) { }
+  ) {}
 
-  private static toNumber(value: unknown): number {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string') return Number(value);
-    return Number.NaN;
-  }
-
-  private sortHotelRelations(hotel: Hotel): Hotel {
-    if (Array.isArray(hotel.roomTypes)) {
-      hotel.roomTypes.sort((a: any, b: any) => {
-        const aPrice = HotelsService.toNumber(a?.price);
-        const bPrice = HotelsService.toNumber(b?.price);
-
-        if (Number.isNaN(aPrice) && Number.isNaN(bPrice)) return 0;
-        if (Number.isNaN(aPrice)) return 1;
-        if (Number.isNaN(bPrice)) return -1;
-        return aPrice - bPrice;
-      });
-    }
-
-    if (Array.isArray(hotel.images)) {
-      hotel.images.sort((a: any, b: any) => {
-        const aOrder = typeof a?.sortOrder === 'number' ? a.sortOrder : Number(a?.sortOrder ?? 0);
-        const bOrder = typeof b?.sortOrder === 'number' ? b.sortOrder : Number(b?.sortOrder ?? 0);
-        return aOrder - bOrder;
-      });
-    }
-
+  private normalizeHotel(hotel: Hotel): Hotel {
+    if (Array.isArray(hotel.roomTypes)) sortRoomTypesByPrice(hotel.roomTypes);
+    if (Array.isArray(hotel.images)) sortImagesByOrder(hotel.images);
+    ensureCoverImage(hotel as Hotel & { coverImageUrl?: string });
     return hotel;
   }
 
@@ -110,7 +137,7 @@ export class HotelsService {
       .take(pageSize)
       .getMany();
 
-    data.forEach((hotel) => this.sortHotelRelations(hotel));
+    data.forEach((hotel) => this.normalizeHotel(hotel));
 
     return {
       data,
@@ -132,7 +159,7 @@ export class HotelsService {
       throw new NotFoundException('酒店不存在');
     }
 
-    return this.sortHotelRelations(hotel);
+    return this.normalizeHotel(hotel);
   }
 
   // 获取单个酒店（商户，仅可看自己的）
@@ -146,7 +173,7 @@ export class HotelsService {
       throw new NotFoundException('酒店不存在');
     }
 
-    return this.sortHotelRelations(hotel);
+    return this.normalizeHotel(hotel);
   }
 
   // 更新酒店
@@ -238,7 +265,7 @@ export class HotelsService {
     hotel.status = HotelStatus.PENDING;
     hotel.rejectReason = null;
     const saved = await this.hotelsRepository.save(hotel);
-    return this.sortHotelRelations(saved);
+    return this.normalizeHotel(saved);
   }
 
   // ========== 管理员接口 ==========
@@ -264,7 +291,7 @@ export class HotelsService {
 
     // 移除密码
     data.forEach((hotel) => {
-      this.sortHotelRelations(hotel);
+      this.normalizeHotel(hotel);
       if (hotel.merchant) {
         delete (hotel.merchant as any).password;
       }
@@ -290,7 +317,7 @@ export class HotelsService {
     hotel.status = HotelStatus.APPROVED;
     hotel.rejectReason = null;
     const saved = await this.hotelsRepository.save(hotel);
-    return this.sortHotelRelations(saved);
+    return this.normalizeHotel(saved);
   }
 
   // 审核驳回
@@ -304,7 +331,7 @@ export class HotelsService {
     hotel.status = HotelStatus.REJECTED;
     hotel.rejectReason = reason;
     const saved = await this.hotelsRepository.save(hotel);
-    return this.sortHotelRelations(saved);
+    return this.normalizeHotel(saved);
   }
 
   // 下线
@@ -317,7 +344,7 @@ export class HotelsService {
 
     hotel.status = HotelStatus.OFFLINE;
     const saved = await this.hotelsRepository.save(hotel);
-    return this.sortHotelRelations(saved);
+    return this.normalizeHotel(saved);
   }
 
   // 上线（恢复）
@@ -330,54 +357,30 @@ export class HotelsService {
 
     hotel.status = HotelStatus.APPROVED;
     const saved = await this.hotelsRepository.save(hotel);
-    return this.sortHotelRelations(saved);
+    return this.normalizeHotel(saved);
   }
 
-  // 商户统计数据
+  /** 按状态统计酒店数量（用于商户端与管理员端） */
+  private async countByStatus(where: { merchantId?: number } = {}) {
+    const [draft, pending, approved, rejected, offline] = await Promise.all([
+      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.DRAFT } }),
+      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.PENDING } }),
+      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.APPROVED } }),
+      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.REJECTED } }),
+      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.OFFLINE } }),
+    ]);
+    return { draft, pending, approved, rejected, offline };
+  }
+
   async getMerchantStatistics(merchantId: number) {
-    const total = await this.hotelsRepository.count({
-      where: { merchantId },
-    });
-
-    const pending = await this.hotelsRepository.count({
-      where: { merchantId, status: HotelStatus.PENDING },
-    });
-
-    const approved = await this.hotelsRepository.count({
-      where: { merchantId, status: HotelStatus.APPROVED },
-    });
-
-    const rejected = await this.hotelsRepository.count({
-      where: { merchantId, status: HotelStatus.REJECTED },
-    });
-
-    const draft = await this.hotelsRepository.count({
-      where: { merchantId, status: HotelStatus.DRAFT },
-    });
-
+    const { draft, pending, approved, rejected, offline } = await this.countByStatus({ merchantId });
+    const total = draft + pending + approved + rejected + offline;
     return { total, pending, approved, rejected, draft };
   }
 
-  // 管理员统计数据
   async getAdminStatistics() {
-    const total = await this.hotelsRepository.count();
-
-    const pending = await this.hotelsRepository.count({
-      where: { status: HotelStatus.PENDING },
-    });
-
-    const approved = await this.hotelsRepository.count({
-      where: { status: HotelStatus.APPROVED },
-    });
-
-    const rejected = await this.hotelsRepository.count({
-      where: { status: HotelStatus.REJECTED },
-    });
-
-    const offline = await this.hotelsRepository.count({
-      where: { status: HotelStatus.OFFLINE },
-    });
-
+    const { draft, pending, approved, rejected, offline } = await this.countByStatus();
+    const total = draft + pending + approved + rejected + offline;
     return { total, pending, approved, rejected, offline };
   }
 
@@ -430,9 +433,12 @@ export class HotelsService {
       );
     }
     if (filters?.city?.trim()) {
-      query.andWhere('hotel.address LIKE :city', {
-        city: `%${filters.city.trim()}%`,
-      });
+      const cityPattern = `${filters.city.trim()}%`;
+      const cityLike = `%${filters.city.trim()}%`;
+      query.andWhere(
+        '(hotel.address LIKE :cityLike OR hotel.nameCn LIKE :cityPattern)',
+        { cityLike, cityPattern },
+      );
     }
     if (filters?.starRating != null && filters.starRating > 0) {
       query.andWhere('hotel.starRating = :starRating', {
@@ -516,10 +522,16 @@ export class HotelsService {
       .take(pageSize)
       .getMany();
 
-    data.forEach((hotel) => this.sortHotelRelations(hotel));
+    data.forEach((hotel) => this.normalizeHotel(hotel));
+
+    // 转为普通对象并显式带上 coverImageUrl，确保序列化后前端一定能拿到主图
+    const dataWithCover = data.map((h) => {
+      const cover = ((h as any).coverImageUrl as string | undefined)?.trim?.();
+      return { ...h, coverImageUrl: cover || getPlaceholderImageUrl(h.id) };
+    });
 
     return {
-      data,
+      data: dataWithCover,
       page,
       pageSize,
       total,
@@ -537,6 +549,6 @@ export class HotelsService {
       throw new NotFoundException('酒店不存在或未发布');
     }
 
-    return this.sortHotelRelations(hotel);
+    return this.normalizeHotel(hotel);
   }
 }
