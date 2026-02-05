@@ -16,9 +16,6 @@ import {
     HotelImage
 } from '../config/database';
 import {
-    getExteriorImage,
-    getLobbyImage,
-    getPoolImage,
     getRoomImageByType,
     generateHotelImages,
 } from '../images/hotel-images';
@@ -47,7 +44,7 @@ async function updateImages() {
     const roomTypeRepository = dataSource.getRepository(RoomType);
     const hotelRepository = dataSource.getRepository(Hotel);
 
-    // 更新酒店图片：按 hotelId + cityIndex 生成唯一主图
+    // 更新酒店图片：使用生成器按酒店维度生成，保证「同酒店不同图」且无空 URL
     const hotelImages = await imageRepository.find({
         order: { hotelId: 'ASC', sortOrder: 'ASC' }
     });
@@ -65,20 +62,27 @@ async function updateImages() {
     for (const [hotelId, imgs] of imagesByHotel) {
         const hotel = await hotelRepository.findOne({ where: { id: hotelId } });
         const cityIndex = hotel ? getCityIndexFromName(hotel.nameCn) : 0;
+        const desiredCount = Math.min(4, Math.max(1, imgs.length));
+        const generated = generateHotelImages(hotelId, cityIndex, desiredCount);
 
-        for (const img of imgs) {
-            let newUrl: string;
-            if (img.sortOrder === 0) {
-                newUrl = getExteriorImage(hotelId, cityIndex, 0);
-            } else if (img.sortOrder === 1) {
-                newUrl = getLobbyImage(hotelId, cityIndex);
-            } else if (img.sortOrder === 2) {
-                newUrl = getPoolImage(hotelId, cityIndex);
+        for (let i = 0; i < generated.length; i++) {
+            const target = imgs[i];
+            if (target) {
+                await imageRepository.update(target.id, {
+                    imageUrl: generated[i].imageUrl,
+                    description: generated[i].description,
+                    sortOrder: i,
+                });
+                updatedCount++;
             } else {
-                newUrl = getExteriorImage(hotelId, cityIndex, 400);
+                await imageRepository.insert({
+                    hotelId,
+                    imageUrl: generated[i].imageUrl,
+                    description: generated[i].description,
+                    sortOrder: i,
+                });
+                updatedCount++;
             }
-            await imageRepository.update(img.id, { imageUrl: newUrl });
-            updatedCount++;
         }
     }
     console.log(`   ✓ 更新了 ${updatedCount} 张酒店图片`);
