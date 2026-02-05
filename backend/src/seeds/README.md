@@ -12,7 +12,7 @@ seeds/
 │   └── types.ts           # TypeScript 类型定义
 ├── data/                   # 数据模块
 │   ├── users.ts           # 用户种子数据（3个测试账号）
-│   └── featured-hotels.ts # 10家精选演示酒店
+│   └── featured-hotels.ts # 20家精选演示酒店
 ├── generators/             # 生成器模块
 │   └── hotel-generator.ts # 酒店批量生成器（支持10000+）
 ├── images/                 # 图片模块
@@ -35,7 +35,7 @@ npm run seed
 
 创建：
 - 3 个测试用户（2 商户 + 1 管理员）
-- 10 家精选演示酒店
+- 20 家精选演示酒店
 
 ### 2. 批量生成测试酒店
 

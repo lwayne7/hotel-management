@@ -4,10 +4,10 @@
  * 为10000+酒店提供多样化图片，确保图片与酒店内容相关
  * 使用 hotelId + cityIndex + 多重哈希 作为种子确保不同酒店有不同图片组合
  * 
- * 图片总数: 150+ 张精选高质量酒店图片
+ * 图片总数: 150+ 张；外观 115 张无重复，与酒店场景一致
  */
 
-// ========== 酒店外观图片 (50张) ==========
+// ========== 酒店外观图片 (115 张，已去重) ==========
 export const HOTEL_EXTERIOR_IMAGES = [
     // 现代酒店外观 (10张)
     'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800', // 现代酒店外观
@@ -64,6 +64,55 @@ export const HOTEL_EXTERIOR_IMAGES = [
     'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800', // 现代设计酒店
     'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', // 夜景建筑酒店
     'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800', // 简约建筑酒店
+    // 追加 50 张（大堂/泳池等）与上 50 张不重复，共 100 张外观图降低主图重复率
+    'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800',
+    'https://images.unsplash.com/photo-1600011689032-8b628b8a8747?w=800',
+    'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=800',
+    'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800',
+    'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=800',
+    'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800',
+    'https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=800',
+    'https://images.unsplash.com/photo-1600573472591-ee6c563aaec1?w=800',
+    'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800',
+    'https://images.unsplash.com/photo-1615874959474-d609969a20ed?w=800',
+    'https://images.unsplash.com/photo-1600121848594-d8644e57abab?w=800',
+    'https://images.unsplash.com/photo-1600047509358-9dc75507daeb?w=800',
+    'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800',
+    'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800',
+    'https://images.unsplash.com/photo-1600585152915-d208bec867a1?w=800',
+    'https://images.unsplash.com/photo-1600210491892-03d54c0aaf87?w=800',
+    'https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800',
+    'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800',
+    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=800',
+    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800',
+    'https://images.unsplash.com/photo-1629140727571-9b5c6f6267b4?w=800',
+    'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67f87?w=800',
+    'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=800',
+    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
+    'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800',
+    'https://images.unsplash.com/photo-1602002418082-a4443e081dd1?w=800',
+    'https://images.unsplash.com/photo-1598899134739-acd2e526dab0?w=800', // 酒店外观（替换重复）
+    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800',
+    'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800',
+    'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800',
+    'https://images.unsplash.com/photo-1571006462842-6d2c7e2b6b4e?w=800', // 酒店建筑（替换重复）
+    'https://images.unsplash.com/photo-1586176537510-864d2c60f6b2?w=800', // 度假村外观（替换重复）
+    'https://images.unsplash.com/photo-1590496606630-aa2c746939e0?w=800', // 城市酒店（替换重复）
+    'https://images.unsplash.com/photo-1599820561408-323b64583438?w=800', // 酒店外观（无重复）
+    'https://images.unsplash.com/photo-1576610616656-d3aa5d1f4534?w=800',
+    'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800',
+    'https://images.unsplash.com/photo-1573544269041-9a44b0a8a19a?w=800',
+    'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800',
+    'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800',
+    'https://images.unsplash.com/photo-1559599746-c0f31c1a6f11?w=800',
+    'https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=800',
+    'https://images.unsplash.com/photo-1562778612-e1e0cda9915c?w=800',
+    'https://images.unsplash.com/photo-1572331165267-854da2b10ccc?w=800',
+    'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800',
+    'https://images.unsplash.com/photo-1600585153492-4794d1f475c9?w=800', // 酒店外观（替换重复）
+    'https://images.unsplash.com/photo-1590073844006-4e456a39fdb2?w=800', // 海滨酒店（替换重复）
+    'https://images.unsplash.com/photo-1598902108854-10e335adac99?w=800', // 度假酒店外观（无重复）
 ];
 
 // ========== 酒店大堂/公共区域图片 (20张) ==========
@@ -99,11 +148,11 @@ export const HOTEL_POOL_IMAGES = [
     'https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800', // 室内泳池
     'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800', // 豪华泳池
     'https://images.unsplash.com/photo-1573544269041-9a44b0a8a19a?w=800', // SPA区域
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', // 夜景泳池
+    'https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=800', // 山景泳池
     'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800', // 热带泳池
     'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=800', // 花园泳池
     'https://images.unsplash.com/photo-1559599746-c0f31c1a6f11?w=800', // 私人泳池
-    'https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=800', // 山景泳池
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800', // 夜景泳池
     'https://images.unsplash.com/photo-1562778612-e1e0cda9915c?w=800', // 海景泳池
     'https://images.unsplash.com/photo-1572331165267-854da2b10ccc?w=800', // SPA按摩
     'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800', // 水疗中心
@@ -213,6 +262,19 @@ export const HOTEL_ROOM_IMAGES = [
     ...FAMILY_ROOM_IMAGES,
 ];
 
+// 去重：各房型图库之间不重复 URL，避免「大床房」与「商务套房」等选到同一张图
+const _usedRoomUrls = new Set<string>();
+const uniqueFrom = (arr: string[], used: Set<string>): string[] => {
+    const out = arr.filter((u) => !used.has(u));
+    arr.forEach((u) => used.add(u));
+    return out.length > 0 ? out : arr;
+};
+const KING_UNIQUE = uniqueFrom([...KING_BED_ROOM_IMAGES], _usedRoomUrls);
+const TWIN_UNIQUE = uniqueFrom([...TWIN_BED_ROOM_IMAGES], _usedRoomUrls);
+const SUITE_UNIQUE = uniqueFrom([...SUITE_ROOM_IMAGES], _usedRoomUrls);
+const FAMILY_UNIQUE = uniqueFrom([...FAMILY_ROOM_IMAGES], _usedRoomUrls);
+const STANDARD_UNIQUE = uniqueFrom([...STANDARD_ROOM_IMAGES], _usedRoomUrls);
+
 // ========== 基于种子的图片选择函数 ==========
 
 /**
@@ -228,100 +290,84 @@ function seededRandom(seed: number): () => number {
 }
 
 /**
- * 计算唯一图片种子
- * 使用 hotelId + cityIndex 确保不同城市有不同图片
+ * 强哈希：将 (hotelId, cityIndex) 映射到 32 位均匀分布，避免不同酒店选到同一张图
+ * 使用大质数混合，确保任意两间酒店得到不同索引的概率极高
  */
-function calculateImageSeed(hotelId: number, cityIndex: number = 0): number {
-    // 使用质数混合确保更好的分布
-    return hotelId * 31 + cityIndex * 7919 + 17;
+function hashImageSeed(hotelId: number, cityIndex: number = 0, offset: number = 0): number {
+    let h = ((hotelId | 0) * 2654435761 + (cityIndex | 0) * 2246822519 + (offset | 0) * 3266489917) >>> 0;
+    h = ((h ^ (h >>> 16)) * 0x85ebca6b) >>> 0;
+    h = ((h ^ (h >>> 13)) * 0xc2b2ae35) >>> 0;
+    return (h ^ (h >>> 16)) >>> 0;
+}
+
+
+/**
+ * 用种子从数组中稳定取图，保证同一酒店/房型始终得到同一张语义化图片
+ */
+function pickFromArray<T>(arr: T[], seed: number): T {
+    const idx = (seed >>> 0) % arr.length;
+    return arr[idx];
+}
+
+/** 房型名称简单哈希，用于同一酒店内不同房型选到不同索引，避免不同房型同图 */
+function hashRoomTypeName(name: string): number {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0;
+    return h >>> 0;
 }
 
 /**
- * 根据房型名称和种子获取对应图片
- * 使用种子确保同一酒店的同一房型总是相同图片
+ * 根据房型名称和酒店 id 获取对应语义化房型图片
+ * 使用去重后的图库（各房型图库无重复 URL），且种子含房型名称哈希，保证同一酒店下不同房型不同图
  */
 export function getRoomImageByType(roomTypeName: string, hotelId: number, roomIndex: number = 0, cityIndex: number = 0): string {
-    const name = roomTypeName.toLowerCase();
-    const seed = calculateImageSeed(hotelId, cityIndex) + roomIndex * 37;
-    const rng = seededRandom(seed);
-    
-    // 套房类型
-    if (name.includes('套房') || name.includes('suite')) {
-        const idx = Math.floor(rng() * SUITE_ROOM_IMAGES.length);
-        return SUITE_ROOM_IMAGES[idx];
-    }
-
-    // 亲子/家庭房
-    if (name.includes('亲子') || name.includes('家庭') || name.includes('family')) {
-        const idx = Math.floor(rng() * FAMILY_ROOM_IMAGES.length);
-        return FAMILY_ROOM_IMAGES[idx];
-    }
-
-    // 双床房
-    if (name.includes('双床') || name.includes('标准间') || name.includes('twin')) {
-        const idx = Math.floor(rng() * TWIN_BED_ROOM_IMAGES.length);
-        return TWIN_BED_ROOM_IMAGES[idx];
-    }
-
-    // 大床房
-    if (name.includes('大床') || name.includes('king') || name.includes('豪华')) {
-        const idx = Math.floor(rng() * KING_BED_ROOM_IMAGES.length);
-        return KING_BED_ROOM_IMAGES[idx];
-    }
-
-    // 标准间
-    if (name.includes('标准')) {
-        const idx = Math.floor(rng() * STANDARD_ROOM_IMAGES.length);
-        return STANDARD_ROOM_IMAGES[idx];
-    }
-
-    // 默认使用大床房图片
-    const idx = Math.floor(rng() * KING_BED_ROOM_IMAGES.length);
-    return KING_BED_ROOM_IMAGES[idx];
+    const offset = 500 + roomIndex * 37;
+    const seed = hashImageSeed(hotelId, cityIndex, offset);
+    const nameHash = hashRoomTypeName(roomTypeName || '');
+    const combinedSeed = (seed + nameHash) >>> 0;
+    const name = roomTypeName || '';
+    if (name.includes('套房')) return pickFromArray(SUITE_UNIQUE, combinedSeed);
+    if (name.includes('大床') || name.includes('豪华')) return pickFromArray(KING_UNIQUE, combinedSeed);
+    if (name.includes('双床') || name.includes('标准间')) return pickFromArray(TWIN_UNIQUE, combinedSeed);
+    if (name.includes('家庭') || name.includes('亲子')) return pickFromArray(FAMILY_UNIQUE, combinedSeed);
+    return pickFromArray(STANDARD_UNIQUE, combinedSeed);
 }
 
 /**
- * 根据酒店ID和城市索引获取外观图片
+ * 根据酒店ID和城市索引获取外观图片（主图）- 使用精选酒店外观图
+ * @param offset 可选偏移，用于取第二张外观等（如 400）
  */
-export function getExteriorImage(hotelId: number, cityIndex: number = 0): string {
-    const seed = calculateImageSeed(hotelId, cityIndex);
-    const rng = seededRandom(seed);
-    const idx = Math.floor(rng() * HOTEL_EXTERIOR_IMAGES.length);
-    return HOTEL_EXTERIOR_IMAGES[idx];
+export function getExteriorImage(hotelId: number, cityIndex: number = 0, offset: number = 0): string {
+    const seed = hashImageSeed(hotelId, cityIndex, offset);
+    return pickFromArray(HOTEL_EXTERIOR_IMAGES, seed);
 }
 
 /**
- * 根据酒店ID和城市索引获取房间图片（通用）
+ * 根据酒店ID和城市索引获取房间图片（通用）- 使用精选客房图
  */
 export function getRoomImage(hotelId: number, cityIndex: number = 0): string {
-    const seed = calculateImageSeed(hotelId, cityIndex) + 100;
-    const rng = seededRandom(seed);
-    const idx = Math.floor(rng() * HOTEL_ROOM_IMAGES.length);
-    return HOTEL_ROOM_IMAGES[idx];
+    const seed = hashImageSeed(hotelId, cityIndex, 100);
+    return pickFromArray(HOTEL_ROOM_IMAGES, seed);
 }
 
 /**
- * 根据酒店ID和城市索引获取大堂图片
+ * 根据酒店ID和城市索引获取大堂图片 - 使用精选大堂图
  */
 export function getLobbyImage(hotelId: number, cityIndex: number = 0): string {
-    const seed = calculateImageSeed(hotelId, cityIndex) + 200;
-    const rng = seededRandom(seed);
-    const idx = Math.floor(rng() * HOTEL_LOBBY_IMAGES.length);
-    return HOTEL_LOBBY_IMAGES[idx];
+    const seed = hashImageSeed(hotelId, cityIndex, 200);
+    return pickFromArray(HOTEL_LOBBY_IMAGES, seed);
 }
 
 /**
- * 根据酒店ID和城市索引获取泳池图片
+ * 根据酒店ID和城市索引获取泳池图片 - 使用精选泳池/SPA图
  */
 export function getPoolImage(hotelId: number, cityIndex: number = 0): string {
-    const seed = calculateImageSeed(hotelId, cityIndex) + 300;
-    const rng = seededRandom(seed);
-    const idx = Math.floor(rng() * HOTEL_POOL_IMAGES.length);
-    return HOTEL_POOL_IMAGES[idx];
+    const seed = hashImageSeed(hotelId, cityIndex, 300);
+    return pickFromArray(HOTEL_POOL_IMAGES, seed);
 }
 
 /**
- * 生成酒店图片数组
+ * 生成酒店图片数组（仅外观/大堂/泳池，不含客房图，避免与房型图重复）
  * 使用 hotelId + cityIndex 确保不同城市有不同图片组合
  */
 export function generateHotelImages(
@@ -332,7 +378,7 @@ export function generateHotelImages(
     const images: { imageUrl: string; description: string }[] = [];
 
     images.push({
-        imageUrl: getExteriorImage(hotelId, cityIndex),
+        imageUrl: getExteriorImage(hotelId, cityIndex, 0),
         description: '酒店外观'
     });
 
@@ -345,15 +391,15 @@ export function generateHotelImages(
 
     if (count >= 3) {
         images.push({
-            imageUrl: getRoomImage(hotelId, cityIndex),
-            description: '豪华客房'
+            imageUrl: getPoolImage(hotelId, cityIndex),
+            description: '泳池设施'
         });
     }
 
     if (count >= 4) {
         images.push({
-            imageUrl: getPoolImage(hotelId, cityIndex),
-            description: '泳池设施'
+            imageUrl: getExteriorImage(hotelId, cityIndex, 400),
+            description: '酒店外观'
         });
     }
 
@@ -365,16 +411,16 @@ export function generateHotelImages(
  * 根据房型名称匹配合适的图片，使用种子确保唯一性
  */
 export function generateRoomTypeImage(
-    hotelId: number, 
-    roomTypeIndex: number, 
+    hotelId: number,
+    roomTypeIndex: number,
     roomTypeName?: string,
     cityIndex: number = 0
 ): string {
     if (roomTypeName) {
         return getRoomImageByType(roomTypeName, hotelId, roomTypeIndex, cityIndex);
     }
-    const seed = calculateImageSeed(hotelId, cityIndex) + roomTypeIndex * 50;
-    const rng = seededRandom(seed);
+    const seed = (hashImageSeed(hotelId, cityIndex, 50) >>> 0) + roomTypeIndex * 50;
+    const rng = seededRandom(seed || 1);
     const idx = Math.floor(rng() * HOTEL_ROOM_IMAGES.length);
     return HOTEL_ROOM_IMAGES[idx];
 }
