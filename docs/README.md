@@ -157,11 +157,11 @@
 ### 技术栈
 
 **前端**：
-- ⚛️ React 18 + TypeScript
-- ⚡ Vite
-- 🎨 Ant Design 5.x
+- ⚛️ React 19 + TypeScript 5.9
+- ⚡ Vite 7
+- 🎨 Ant Design 6.x
 - 🔄 Redux Toolkit
-- 🛣️ React Router 6
+- 🛣️ React Router 7
 
 **后端**：
 - 🦅 NestJS + TypeScript
@@ -185,7 +185,7 @@
 
 **测试数据**：
 - ✅ 3个测试账号（2商户+1管理员）
-- ✅ 2个演示酒店
+- ✅ 20个精选演示酒店（覆盖多城市、多价位与多种标签）
 - ✅ 完整的业务流程演示
 
 ---

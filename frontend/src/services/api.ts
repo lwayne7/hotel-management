@@ -89,25 +89,38 @@ export interface Hotel {
   transportation?: string[];
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'offline';
   rejectReason?: string;
-  roomTypes?: any[];
-  images?: any[];
+  roomTypes?: Array<{ id?: number; name?: string; price?: number; [key: string]: unknown }>;
+  images?: Array<{ id?: number; imageUrl?: string; description?: string }>;
 }
 
-// 酒店相关 API
+/** 酒店列表查询参数 */
+export interface HotelListParams {
+  page?: number;
+  status?: string;
+}
+
+/** 酒店列表响应 */
+export interface HotelListResult {
+  data: Hotel[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages?: number;
+}
+
+// 酒店相关 API（响应拦截器已解包为 response.data，故返回类型为数据本身）
 export const hotelApi = {
-  // 商户端
-  getMyHotels: (params?: { page?: number; status?: string }): Promise<{ data: Hotel[]; page: number; pageSize: number; total: number }> =>
+  getMyHotels: (params?: HotelListParams): Promise<HotelListResult> =>
     api.get('/hotels/my', { params }),
   getHotelById: (id: number): Promise<Hotel> => api.get(`/hotels/${id}`),
-  createHotel: (data: any): Promise<Hotel> => api.post('/hotels', data),
-  updateHotel: (id: number, data: any): Promise<Hotel> => api.patch(`/hotels/${id}`, data),
+  createHotel: (data: Partial<Hotel>): Promise<Hotel> => api.post('/hotels', data),
+  updateHotel: (id: number, data: Partial<Hotel>): Promise<Hotel> => api.patch(`/hotels/${id}`, data),
   deleteHotel: (id: number): Promise<void> => api.delete(`/hotels/${id}`),
   submitForReview: (id: number): Promise<Hotel> => api.post(`/hotels/${id}/submit`),
   getMerchantStatistics: (): Promise<{ total: number; pending: number; approved: number; rejected: number; draft: number }> =>
     api.get('/hotels/statistics'),
 
-  // 管理员端
-  getPendingHotels: (params?: { page?: number; status?: string }): Promise<{ data: Hotel[]; page: number; pageSize: number; total: number }> =>
+  getPendingHotels: (params?: HotelListParams): Promise<HotelListResult> =>
     api.get('/admin/hotels', { params }),
   approveHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/approve`),
   rejectHotel: (id: number, reason: string): Promise<Hotel> =>
@@ -116,11 +129,6 @@ export const hotelApi = {
   onlineHotel: (id: number): Promise<Hotel> => api.post(`/admin/hotels/${id}/online`),
   getAdminStatistics: (): Promise<{ total: number; pending: number; approved: number; rejected: number; offline: number }> =>
     api.get('/admin/statistics'),
-};
-
-// 上传相关 API
-export const uploadApi = {
-  getOssSignature: () => api.get('/upload/signature'),
 };
 
 export default api;
