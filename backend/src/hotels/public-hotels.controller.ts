@@ -18,6 +18,7 @@ export class PublicHotelsController {
   @ApiQuery({ name: 'minPrice', required: false, type: Number })
   @ApiQuery({ name: 'maxPrice', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'accommodationType', required: false, type: String, description: '住宿类型筛选，逗号分隔' })
   @ApiQuery({ name: 'facilities', required: false, type: String, description: '设施筛选，逗号分隔' })
   @ApiQuery({ name: 'brands', required: false, type: String, description: '品牌筛选，逗号分隔' })
   @ApiQuery({ name: 'hotelFeatures', required: false, type: String, description: '酒店特色，逗号分隔' })
@@ -32,6 +33,7 @@ export class PublicHotelsController {
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
     @Query('sortBy') sortBy?: string,
+    @Query('accommodationType') accommodationType?: string,
     @Query('facilities') facilities?: string,
     @Query('brands') brands?: string,
     @Query('hotelFeatures') hotelFeatures?: string,
@@ -46,6 +48,7 @@ export class PublicHotelsController {
     if (minPrice != null) filters.minPrice = parseFloat(minPrice);
     if (maxPrice != null) filters.maxPrice = parseFloat(maxPrice);
     if (sortBy) filters.sortBy = sortBy;
+    if (accommodationType) filters.accommodationType = accommodationType.split(',').map((s) => s.trim()).filter(Boolean);
     if (facilities) filters.facilities = facilities.split(',').map((s) => s.trim()).filter(Boolean);
     if (brands) filters.brands = brands.split(',').map((s) => s.trim()).filter(Boolean);
     if (hotelFeatures) filters.hotelFeatures = hotelFeatures.split(',').map((s) => s.trim()).filter(Boolean);

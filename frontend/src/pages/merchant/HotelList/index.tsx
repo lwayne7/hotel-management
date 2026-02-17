@@ -45,11 +45,11 @@ const MerchantHotels: React.FC = () => {
   const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
-    loadHotels();
-  }, [activeStatus, pagination.page]);
+    loadHotels(1);
+  }, [activeStatus]);
 
-  const loadHotels = () => {
-    const params: any = { page: pagination.page };
+  const loadHotels = (page = 1) => {
+    const params: any = { page };
     if (activeStatus !== 'all') {
       params.status = activeStatus;
     }
@@ -63,7 +63,7 @@ const MerchantHotels: React.FC = () => {
     try {
       await hotelApi.deleteHotel(id);
       message.success('删除成功');
-      loadHotels();
+      loadHotels(pagination.page);
     } catch (error: any) {
       message.error(error.response?.data?.message || '删除失败');
     }
@@ -73,7 +73,7 @@ const MerchantHotels: React.FC = () => {
     try {
       await hotelApi.submitForReview(id);
       message.success('提交审核成功');
-      loadHotels();
+      loadHotels(pagination.page);
     } catch (error: any) {
       message.error(error.response?.data?.message || '提交失败');
     }
@@ -239,7 +239,7 @@ const MerchantHotels: React.FC = () => {
           style={{ width: 300 }}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          onSearch={loadHotels}
+          onSearch={() => loadHotels(1)}
           allowClear
           enterButton="搜索"
         />
@@ -256,7 +256,7 @@ const MerchantHotels: React.FC = () => {
           total: pagination.total,
           showTotal: (total) => `共 ${total} 条`,
           onChange: (page) => {
-            dispatch(fetchMyHotels({ page, status: activeStatus === 'all' ? undefined : activeStatus as HotelStatus }));
+            loadHotels(page);
           },
         }}
       />

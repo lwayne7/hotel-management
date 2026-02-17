@@ -118,10 +118,10 @@ export class CreateHotelDto {
   @Max(5)
   starRating: number;
 
-  @ApiPropertyOptional({ description: '开业时间', example: '2020-01-01' })
-  @IsOptional()
-  @IsDateString()
-  openingDate?: string;
+  @ApiProperty({ description: '开业时间', example: '2020-01-01' })
+  @IsNotEmpty({ message: '开业时间不能为空' })
+  @IsDateString({}, { message: '开业时间格式错误，应为 YYYY-MM-DD' })
+  openingDate: string;
 
   @ApiPropertyOptional({ description: '酒店描述' })
   @IsOptional()

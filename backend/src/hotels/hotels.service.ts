@@ -41,6 +41,14 @@ function sortImagesByOrder(images: unknown[]): void {
   });
 }
 
+const ACCOMMODATION_TYPE_KEYWORDS: Record<string, string[]> = {
+  homestay: ['民宿'],
+  apartment: ['酒店公寓', '公寓'],
+  hostel: ['青年旅馆', '青旅'],
+  flat: ['公寓'],
+  hourly: ['钟点房', '小时房'],
+};
+
 /** 确保酒店有主图：无图时用房型图或占位图，并设置 coverImageUrl */
 function ensureCoverImage(hotel: Hotel & { coverImageUrl?: string }): void {
   const hasValidImage = Array.isArray(hotel.images) &&
@@ -278,6 +286,9 @@ export class HotelsService {
     if (!hotel.roomTypes || hotel.roomTypes.length === 0) {
       throw new ForbiddenException('请至少添加一个房型');
     }
+    if (!hotel.openingDate) {
+      throw new ForbiddenException('请填写开业时间');
+    }
 
     hotel.status = HotelStatus.PENDING;
     hotel.rejectReason = null;
@@ -438,6 +449,7 @@ export class HotelsService {
       maxPrice?: number;
       sortBy?: string;
       // 综合筛选参数
+      accommodationType?: string[];
       facilities?: string[];
       brands?: string[];
       hotelFeatures?: string[];
@@ -485,6 +497,28 @@ export class HotelsService {
       query.andWhere('hotel.starRating = :starRating', {
         starRating: filters.starRating,
       });
+    }
+
+    // 住宿类型筛选：hotel 表示“全部酒店”不额外过滤，其它类型按名称/描述关键字匹配
+    if (filters?.accommodationType?.length && !filters.accommodationType.includes('hotel')) {
+      const typeConditions: string[] = [];
+      let keywordIndex = 0;
+      filters.accommodationType.forEach((type) => {
+        const keywords = ACCOMMODATION_TYPE_KEYWORDS[type] || [];
+        keywords.forEach((keyword) => {
+          const paramName = `accommodationType${keywordIndex++}`;
+          typeConditions.push(
+            `(hotel.nameCn LIKE :${paramName} OR hotel.nameEn LIKE :${paramName} OR hotel.description LIKE :${paramName})`,
+          );
+          query.setParameter(paramName, `%${keyword}%`);
+        });
+      });
+      if (typeConditions.length > 0) {
+        query.andWhere(`(${typeConditions.join(' OR ')})`);
+      } else {
+        // 传入未知类型时不返回数据，避免“筛选无效果”
+        query.andWhere('1 = 0');
+      }
     }
     
     // 设施筛选 - 搜索 facilities 字段

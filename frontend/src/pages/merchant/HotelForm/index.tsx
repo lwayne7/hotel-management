@@ -269,7 +269,11 @@ const HotelForm: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="openingDate" label="开业时间">
+              <Form.Item
+                name="openingDate"
+                label="开业时间"
+                rules={[{ required: true, message: '请选择开业时间' }]}
+              >
                 <DatePicker style={{ width: '100%' }} placeholder="选择开业日期" />
               </Form.Item>
             </Col>
