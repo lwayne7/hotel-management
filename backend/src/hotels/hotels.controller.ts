@@ -59,17 +59,20 @@ export class HotelsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: HotelStatus })
+  @ApiQuery({ name: 'keyword', required: false, type: String, description: '搜索关键词' })
   async findMy(
     @CurrentUser() user: { id: number },
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('status') status?: HotelStatus,
+    @Query('keyword') keyword?: string,
   ) {
     return this.hotelsService.findByMerchant(
       user.id,
       page ?? 1,
       pageSize ?? 10,
       status,
+      keyword,
     );
   }
 

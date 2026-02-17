@@ -26,31 +26,12 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import { hotelApi } from '../../../services/api';
+import type { Hotel } from '../../../types/hotel';
 import dayjs from 'dayjs';
 import './index.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-
-interface Hotel {
-  id: number;
-  nameCn: string;
-  nameEn?: string;
-  address: string;
-  starRating: number;
-  openingDate?: string;
-  description?: string;
-  facilities?: string[];
-  nearbyAttractions?: string[];
-  transportation?: string[];
-  status: string;
-  rejectReason?: string;
-  merchant?: { id: number; username: string; nickname?: string };
-  roomTypes?: any[];
-  images?: any[];
-  createdAt: string;
-  updatedAt: string;
-}
 
 const statusConfig: Record<string, { color: string; text: string }> = {
   draft: { color: 'default', text: '草稿' },
@@ -264,7 +245,14 @@ const ReviewList: React.FC = () => {
     <div className="admin-review">
       <Title level={3}>酒店审核</Title>
 
-      <Tabs activeKey={activeStatus} onChange={setActiveStatus} items={tabItems} />
+      <Tabs
+        activeKey={activeStatus}
+        onChange={(key) => {
+          setActiveStatus(key);
+          setPagination((prev) => ({ ...prev, page: 1 }));
+        }}
+        items={tabItems}
+      />
 
       <Table
         columns={columns}

@@ -52,6 +52,7 @@ const HotelForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [rejectReason, setRejectReason] = useState<string | null>(null);
+  const [hotelStatus, setHotelStatus] = useState<string | null>(null);
 
   const isEdit = !!id;
 
@@ -66,9 +67,10 @@ const HotelForm: React.FC = () => {
       setIsReadOnly(false);
       setRejectReason(null);
       const hotel = await hotelApi.getHotelById(hotelId);
+      setHotelStatus(hotel.status);
       
-      // 检查是否只读（非草稿和驳回状态）
-      if (!['draft', 'rejected'].includes(hotel.status)) {
+      // 只有"待审核"状态为只读，其余状态均可编辑
+      if (hotel.status === 'pending') {
         setIsReadOnly(true);
       }
       if (hotel.status === 'rejected' && hotel.rejectReason) {
@@ -93,16 +95,43 @@ const HotelForm: React.FC = () => {
       const values = await form.validateFields();
       setSubmitting(true);
 
+      // 清理房型数据中的 null/undefined 值，避免后端验证失败
+      const cleanedRoomTypes = (values.roomTypes || []).map((rt: any) => ({
+        ...rt,
+        price: rt.price ?? 0,
+        originalPrice: rt.originalPrice != null ? Number(rt.originalPrice) : undefined,
+        discountValue: rt.discountValue != null ? Number(rt.discountValue) : undefined,
+        maxGuests: rt.maxGuests ?? 2,
+        roomSize: rt.roomSize != null ? Number(rt.roomSize) : undefined,
+      }));
+
       const data = {
         ...values,
         openingDate: values.openingDate?.format('YYYY-MM-DD'),
+        roomTypes: cleanedRoomTypes,
       };
 
       if (isEdit) {
         await hotelApi.updateHotel(parseInt(id!), data);
+
+        if (!isDraft) {
+          // 已发布/已下线酒店：update 已自动将状态改为 pending，无需再调 submitForReview
+          // 草稿/已驳回酒店：update 不改状态，需显式调 submitForReview
+          if (hotelStatus === 'draft' || hotelStatus === 'rejected') {
+            await hotelApi.submitForReview(parseInt(id!));
+          }
+          message.success('已提交审核');
+          navigate('/merchant/hotels');
+          return;
+        }
+
         message.success('保存成功');
         // 保存后实时更新：重新拉取最新数据回填表单
         const updated = await hotelApi.getHotelById(parseInt(id!));
+        setHotelStatus(updated.status);
+        if (updated.status === 'pending') {
+          setIsReadOnly(true);
+        }
         form.setFieldsValue({
           ...updated,
           openingDate: updated.openingDate ? dayjs(updated.openingDate) : undefined,
@@ -118,13 +147,6 @@ const HotelForm: React.FC = () => {
           await hotelApi.submitForReview(newHotel.id);
           message.success('已提交审核');
         }
-        navigate('/merchant/hotels');
-        return;
-      }
-
-      if (!isDraft && isEdit) {
-        await hotelApi.submitForReview(parseInt(id!));
-        message.success('已提交审核');
         navigate('/merchant/hotels');
       }
     } catch (error: any) {
@@ -169,6 +191,26 @@ const HotelForm: React.FC = () => {
           </Space>
         )}
       </div>
+
+      {hotelStatus === 'pending' && (
+        <Alert
+          type="info"
+          showIcon
+          message="正在审核中"
+          description="酒店信息正在等待管理员审核，审核期间无法编辑。"
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {(hotelStatus === 'approved' || hotelStatus === 'offline') && (
+        <Alert
+          type="warning"
+          showIcon
+          message={hotelStatus === 'approved' ? '编辑已发布酒店' : '编辑已下线酒店'}
+          description="修改保存后酒店状态将变为【待审核】，需管理员重新审核后才会再次发布。"
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       {rejectReason && (
         <Alert

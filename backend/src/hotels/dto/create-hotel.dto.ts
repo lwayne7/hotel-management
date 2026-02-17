@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsInt,
+  IsNumber,
   IsArray,
   IsDateString,
   IsEnum,
@@ -11,7 +12,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DiscountType } from '../entities/room-type.entity';
 
@@ -23,13 +24,15 @@ class CreateRoomTypeDto {
   name: string;
 
   @ApiProperty({ description: '房间价格', example: 399 })
-  @IsInt()
+  @Transform(({ value }) => (value == null ? undefined : Number(value)))
+  @IsNumber({}, { message: '价格必须是有效的数字' })
   @Min(0)
   price: number;
 
   @ApiPropertyOptional({ description: '原价', example: 499 })
   @IsOptional()
-  @IsInt()
+  @Transform(({ value }) => (value == null ? undefined : Number(value)))
+  @IsNumber({}, { message: '原价必须是有效的数字' })
   @Min(0)
   originalPrice?: number;
 
@@ -40,6 +43,8 @@ class CreateRoomTypeDto {
 
   @ApiPropertyOptional({ description: '折扣值', example: 80 })
   @IsOptional()
+  @Transform(({ value }) => (value == null ? undefined : Number(value)))
+  @IsNumber()
   discountValue?: number;
 
   @ApiPropertyOptional({ description: '折扣描述', example: '限时8折' })
@@ -49,6 +54,7 @@ class CreateRoomTypeDto {
 
   @ApiPropertyOptional({ description: '最大入住人数', example: 2 })
   @IsOptional()
+  @Transform(({ value }) => (value == null ? undefined : Math.round(Number(value))))
   @IsInt()
   @Min(1)
   maxGuests?: number;
@@ -60,6 +66,7 @@ class CreateRoomTypeDto {
 
   @ApiPropertyOptional({ description: '房间面积(平方米)', example: 35 })
   @IsOptional()
+  @Transform(({ value }) => (value == null ? undefined : Math.round(Number(value))))
   @IsInt()
   roomSize?: number;
 

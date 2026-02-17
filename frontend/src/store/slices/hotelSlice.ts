@@ -1,49 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { hotelApi } from '../../services/api';
+import type { Hotel, HotelStatus, DiscountType, RoomType, HotelImage } from '../../types/hotel';
 
-export type HotelStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'offline';
-export type DiscountType = 'none' | 'percentage' | 'fixed' | 'package';
-
-export interface RoomType {
-  id?: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  discountType: DiscountType;
-  discountValue?: number;
-  discountDescription?: string;
-  maxGuests: number;
-  bedType?: string;
-  roomSize?: number;
-  amenities?: string[];
-}
-
-export interface HotelImage {
-  id?: number;
-  imageUrl: string;
-  sortOrder: number;
-  description?: string;
-}
-
-export interface Hotel {
-  id: number;
-  nameCn: string;
-  nameEn?: string;
-  address: string;
-  starRating: number;
-  openingDate?: string;
-  description?: string;
-  facilities?: string[];
-  nearbyAttractions?: string[];
-  transportation?: string[];
-  status: HotelStatus;
-  rejectReason?: string;
-  merchantId: number;
-  roomTypes: RoomType[];
-  images: HotelImage[];
-  createdAt: string;
-  updatedAt: string;
-}
+export type { Hotel, HotelStatus, DiscountType, RoomType, HotelImage };
 
 interface HotelState {
   hotels: Hotel[];
@@ -72,7 +31,7 @@ const initialState: HotelState = {
 // 异步 Thunks
 export const fetchMyHotels = createAsyncThunk(
   'hotel/fetchMyHotels',
-  async (params: { page?: number; status?: HotelStatus }, { rejectWithValue }) => {
+  async (params: { page?: number; status?: HotelStatus; keyword?: string }, { rejectWithValue }) => {
     try {
       const response = await hotelApi.getMyHotels(params);
       return response;

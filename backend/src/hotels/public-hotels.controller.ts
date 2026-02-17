@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, Sse, MessageEvent } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Observable, interval, map } from 'rxjs';
 import { HotelsService } from './hotels.service';
 
 @ApiTags('用户端-酒店')
@@ -57,6 +58,16 @@ export class PublicHotelsController {
       pageNum,
       pageSizeNum,
       Object.keys(filters).length > 0 ? filters : undefined,
+    );
+  }
+
+  @Sse('price-updates')
+  @ApiOperation({ summary: '实时价格更新推送（SSE），用户端可通过 EventSource 订阅价格变动' })
+  priceUpdates(): Observable<MessageEvent> {
+    return interval(30000).pipe(
+      map(() => ({
+        data: { timestamp: Date.now(), type: 'price-update' },
+      } as MessageEvent)),
     );
   }
 

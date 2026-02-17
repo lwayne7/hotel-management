@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { HotelsModule } from './hotels/hotels.module';
 import { AdminModule } from './admin/admin.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { AdminModule } from './admin/admin.module';
     UsersModule,
     HotelsModule,
     AdminModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

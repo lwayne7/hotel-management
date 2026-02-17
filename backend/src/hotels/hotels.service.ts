@@ -10,6 +10,7 @@ import { RoomType } from './entities/room-type.entity';
 import { HotelImage } from './entities/hotel-image.entity';
 import { CreateHotelDto, UpdateHotelDto } from './dto';
 import { getPlaceholderImageUrl } from './constants/placeholder-images';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 function toNumber(value: unknown): number {
   if (typeof value === 'number') return value;
@@ -69,6 +70,7 @@ export class HotelsService {
     private roomTypesRepository: Repository<RoomType>,
     @InjectRepository(HotelImage)
     private hotelImagesRepository: Repository<HotelImage>,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   private normalizeHotel(hotel: Hotel): Hotel {
@@ -119,6 +121,7 @@ export class HotelsService {
     page = 1,
     pageSize = 10,
     status?: HotelStatus,
+    keyword?: string,
   ) {
     const query = this.hotelsRepository
       .createQueryBuilder('hotel')
@@ -129,6 +132,13 @@ export class HotelsService {
 
     if (status) {
       query.andWhere('hotel.status = :status', { status });
+    }
+
+    if (keyword?.trim()) {
+      query.andWhere(
+        '(hotel.nameCn LIKE :keyword OR hotel.nameEn LIKE :keyword OR hotel.address LIKE :keyword)',
+        { keyword: `%${keyword.trim()}%` },
+      );
     }
 
     const total = await query.getCount();
@@ -189,15 +199,22 @@ export class HotelsService {
       throw new ForbiddenException('无权修改此酒店');
     }
 
-    // 只有草稿或被驳回的酒店可以修改
-    if (![HotelStatus.DRAFT, HotelStatus.REJECTED].includes(hotel.status)) {
-      throw new ForbiddenException('当前状态不允许修改');
+    // 待审核状态不允许修改，需等待审核结果
+    if (hotel.status === HotelStatus.PENDING) {
+      throw new ForbiddenException('酒店正在审核中，暂不允许修改');
     }
 
     const { roomTypes, images, ...hotelData } = updateHotelDto;
 
+    // 已发布或已下线的酒店编辑后需要重新审核
+    const needsReReview = [HotelStatus.APPROVED, HotelStatus.OFFLINE].includes(hotel.status);
+
     // 更新酒店基本信息
     Object.assign(hotel, hotelData);
+    if (needsReReview) {
+      hotel.status = HotelStatus.PENDING;
+      hotel.rejectReason = null;
+    }
     await this.hotelsRepository.save(hotel);
 
     // 更新房型（删除旧的，创建新的）
@@ -265,6 +282,14 @@ export class HotelsService {
     hotel.status = HotelStatus.PENDING;
     hotel.rejectReason = null;
     const saved = await this.hotelsRepository.save(hotel);
+    this.notificationsGateway.sendNotification({
+      type: 'hotel_submitted',
+      hotelId: saved.id,
+      hotelName: saved.nameCn,
+      message: `商户提交了酒店「${saved.nameCn}」的审核申请`,
+      timestamp: Date.now(),
+      targetRole: 'admin',
+    });
     return this.normalizeHotel(saved);
   }
 
@@ -317,6 +342,14 @@ export class HotelsService {
     hotel.status = HotelStatus.APPROVED;
     hotel.rejectReason = null;
     const saved = await this.hotelsRepository.save(hotel);
+    this.notificationsGateway.sendNotification({
+      type: 'hotel_approved',
+      hotelId: saved.id,
+      hotelName: saved.nameCn,
+      message: `您的酒店「${saved.nameCn}」已通过审核并发布`,
+      timestamp: Date.now(),
+      targetRole: 'merchant',
+    });
     return this.normalizeHotel(saved);
   }
 
@@ -331,6 +364,14 @@ export class HotelsService {
     hotel.status = HotelStatus.REJECTED;
     hotel.rejectReason = reason;
     const saved = await this.hotelsRepository.save(hotel);
+    this.notificationsGateway.sendNotification({
+      type: 'hotel_rejected',
+      hotelId: saved.id,
+      hotelName: saved.nameCn,
+      message: `您的酒店「${saved.nameCn}」审核未通过：${reason}`,
+      timestamp: Date.now(),
+      targetRole: 'merchant',
+    });
     return this.normalizeHotel(saved);
   }
 

@@ -4,14 +4,17 @@ import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { store } from './store';
 import router from './router';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
-    <Provider store={store}>
-      <ConfigProvider locale={zhCN}>
-        <RouterProvider router={router} />
-      </ConfigProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <ConfigProvider locale={zhCN}>
+          <RouterProvider router={router} />
+        </ConfigProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 

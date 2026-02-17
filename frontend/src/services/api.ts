@@ -75,28 +75,15 @@ export const authApi = {
   register: (params: RegisterParams): Promise<AuthResponse> => api.post('/auth/register', params),
 };
 
-// 酒店类型
-export interface Hotel {
-  id: number;
-  nameCn: string;
-  nameEn?: string;
-  address: string;
-  starRating: number;
-  openingDate?: string;
-  description?: string;
-  facilities?: string[];
-  nearbyAttractions?: string[];
-  transportation?: string[];
-  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'offline';
-  rejectReason?: string;
-  roomTypes?: Array<{ id?: number; name?: string; price?: number; [key: string]: unknown }>;
-  images?: Array<{ id?: number; imageUrl?: string; description?: string }>;
-}
+// 酒店类型 - 使用共享类型
+import type { Hotel } from '../types/hotel';
+export type { Hotel };
 
 /** 酒店列表查询参数 */
 export interface HotelListParams {
   page?: number;
   status?: string;
+  keyword?: string;
 }
 
 /** 酒店列表响应 */

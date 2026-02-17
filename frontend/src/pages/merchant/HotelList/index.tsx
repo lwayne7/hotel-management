@@ -53,6 +53,9 @@ const MerchantHotels: React.FC = () => {
     if (activeStatus !== 'all') {
       params.status = activeStatus;
     }
+    if (searchText.trim()) {
+      params.keyword = searchText.trim();
+    }
     dispatch(fetchMyHotels(params));
   };
 
@@ -144,29 +147,32 @@ const MerchantHotels: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 240,
       render: (_: any, record: Hotel) => (
         <Space size="small">
-          {['draft', 'rejected'].includes(record.status) && (
-            <>
-              <Button
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => navigate(`/merchant/hotels/${record.id}/edit`)}
-              >
-                编辑
-              </Button>
-              <Button
-                type="link"
-                size="small"
-                icon={<SendOutlined />}
-                onClick={() => handleSubmit(record.id)}
-              >
-                提交审核
-              </Button>
-            </>
+          {/* 草稿/驳回/已发布/已下线 均可编辑 */}
+          {['draft', 'rejected', 'approved', 'offline'].includes(record.status) && (
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/merchant/hotels/${record.id}/edit`)}
+            >
+              编辑
+            </Button>
           )}
+          {/* 草稿/驳回 可提交审核 */}
+          {['draft', 'rejected'].includes(record.status) && (
+            <Button
+              type="link"
+              size="small"
+              icon={<SendOutlined />}
+              onClick={() => handleSubmit(record.id)}
+            >
+              提交审核
+            </Button>
+          )}
+          {/* 仅草稿可删除 */}
           {record.status === 'draft' && (
             <Popconfirm
               title="确定删除此酒店？"
@@ -179,7 +185,8 @@ const MerchantHotels: React.FC = () => {
               </Button>
             </Popconfirm>
           )}
-          {['pending', 'approved', 'offline'].includes(record.status) && (
+          {/* 待审核状态只能查看 */}
+          {record.status === 'pending' && (
             <Button
               type="link"
               size="small"
@@ -202,10 +209,8 @@ const MerchantHotels: React.FC = () => {
     { key: 'offline', label: '已下线' },
   ];
 
-  const filteredHotels = hotels.filter((hotel) =>
-    hotel.nameCn.toLowerCase().includes(searchText.toLowerCase()) ||
-    hotel.address.toLowerCase().includes(searchText.toLowerCase())
-  );
+  // 搜索已通过服务端 keyword 参数过滤，无需客户端再过滤
+  const filteredHotels = hotels;
 
   return (
     <div className="merchant-hotels">
@@ -223,16 +228,20 @@ const MerchantHotels: React.FC = () => {
       <div className="filter-bar">
         <Tabs
           activeKey={activeStatus}
-          onChange={setActiveStatus}
+          onChange={(key) => {
+            setActiveStatus(key);
+          }}
           items={tabItems}
         />
-        <Input
+        <Input.Search
           placeholder="搜索酒店名称或地址"
           prefix={<SearchOutlined />}
-          style={{ width: 250 }}
+          style={{ width: 300 }}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
+          onSearch={loadHotels}
           allowClear
+          enterButton="搜索"
         />
       </div>
 

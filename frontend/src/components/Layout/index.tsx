@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { logout } from '../../store/slices/authSlice';
+import NotificationBell from '../NotificationBell';
 import './index.css';
 
 const { Header, Sider, Content } = Layout;
@@ -117,6 +118,8 @@ const MainLayout: React.FC = () => {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
           />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <NotificationBell />
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div className="user-info">
               <Avatar icon={<UserOutlined />} />
@@ -126,6 +129,7 @@ const MainLayout: React.FC = () => {
               <span className="role-tag">{getRoleName(user?.role)}</span>
             </div>
           </Dropdown>
+          </div>
         </Header>
         <Content
           style={{
