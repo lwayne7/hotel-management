@@ -70,42 +70,57 @@ async function seed() {
     if (existingHotels === 0) {
         console.log('🏨 创建精选酒店...');
 
-        for (let i = 0; i < FEATURED_HOTELS.length; i++) {
-            const hotelData = FEATURED_HOTELS[i];
-            const { roomTypes, images, status, ...hotelInfo } = hotelData;
-
-            // 创建酒店
-            const hotel = hotelRepository.create({
-                ...hotelInfo,
-                status: HotelStatus.APPROVED,
-                merchantId: merchant.id,
+        await dataSource.transaction(async (manager) => {
+            // ① 批量插入所有酒店
+            const hotelEntities = FEATURED_HOTELS.map((h) => {
+                const { roomTypes, images, status, ...hotelInfo } = h;
+                return { ...hotelInfo, status: HotelStatus.APPROVED, merchantId: merchant.id };
             });
-            const savedHotel = await hotelRepository.save(hotel);
-            const hotelId = savedHotel.id;
-            const cityIndex = ALL_CITIES.findIndex((c) => hotelData.nameCn.startsWith(c));
-            const safeCityIndex = cityIndex >= 0 ? cityIndex : 0;
 
-            // 创建房型（房型图用 hotelId 保证唯一）
-            for (let j = 0; j < roomTypes.length; j++) {
-                const rt = roomTypes[j];
-                await roomTypeRepository.save({
-                    ...rt,
-                    imageUrl: rt.imageUrl || getRoomImageByType(rt.name, hotelId, j, safeCityIndex),
-                    hotelId,
-                });
+            const hotelResult = await manager
+                .createQueryBuilder()
+                .insert()
+                .into(Hotel)
+                .values(hotelEntities)
+                .execute();
+
+            const hotelIds: number[] = hotelResult.identifiers.map((r) => r.id as number);
+
+            // ② 批量插入所有房型
+            const allRoomTypes: any[] = [];
+            for (let i = 0; i < FEATURED_HOTELS.length; i++) {
+                const hotelId = hotelIds[i];
+                const cityIndex = ALL_CITIES.findIndex((c) => FEATURED_HOTELS[i].nameCn.startsWith(c));
+                const safeCityIndex = cityIndex >= 0 ? cityIndex : 0;
+                for (let j = 0; j < FEATURED_HOTELS[i].roomTypes.length; j++) {
+                    const rt = FEATURED_HOTELS[i].roomTypes[j];
+                    allRoomTypes.push({
+                        ...rt,
+                        imageUrl: rt.imageUrl || getRoomImageByType(rt.name, hotelId, j, safeCityIndex),
+                        hotelId,
+                    });
+                }
+            }
+            if (allRoomTypes.length > 0) {
+                await manager.createQueryBuilder().insert().into(RoomType).values(allRoomTypes).execute();
             }
 
-            // 使用真实 hotelId 生成酒店图片，避免不同酒店主图重复
-            const imageCount = Math.min(4, Math.max(2, images.length));
-            const imagesToSave = generateHotelImages(hotelId, safeCityIndex, imageCount);
-            for (let k = 0; k < imagesToSave.length; k++) {
-                await imageRepository.save({
-                    ...imagesToSave[k],
-                    sortOrder: k,
-                    hotelId,
-                });
+            // ③ 批量插入所有图片
+            const allImages: any[] = [];
+            for (let i = 0; i < FEATURED_HOTELS.length; i++) {
+                const hotelId = hotelIds[i];
+                const cityIndex = ALL_CITIES.findIndex((c) => FEATURED_HOTELS[i].nameCn.startsWith(c));
+                const safeCityIndex = cityIndex >= 0 ? cityIndex : 0;
+                const imageCount = Math.min(4, Math.max(2, FEATURED_HOTELS[i].images.length));
+                const imagesToSave = generateHotelImages(hotelId, safeCityIndex, imageCount);
+                for (let k = 0; k < imagesToSave.length; k++) {
+                    allImages.push({ ...imagesToSave[k], sortOrder: k, hotelId });
+                }
             }
-        }
+            if (allImages.length > 0) {
+                await manager.createQueryBuilder().insert().into(HotelImage).values(allImages).execute();
+            }
+        });
 
         console.log(`   ✓ 创建了 ${FEATURED_HOTELS.length} 家精选酒店`);
     } else {

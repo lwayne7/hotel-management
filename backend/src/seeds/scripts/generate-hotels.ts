@@ -47,8 +47,7 @@ dotenv.config({ path: path.resolve(backendRoot, '.env') });
 
 // 生成 10000 家酒店，确保数据量足够大
 const TOTAL_HOTELS = 10000;
-const BATCH_SIZE = 500; // 增大批次大小提高效率
-const TRANSACTION_SIZE = 100; // 每个事务处理的酒店数量
+const TRANSACTION_SIZE = 500; // 每个事务处理的酒店数量（增大到 500 减少事务开销）
 
 /**
  * 格式化时间为可读字符串
@@ -71,61 +70,75 @@ function showProgress(current: number, total: number, startTime: number): void {
     const barLength = 30;
     const filled = Math.floor((current / total) * barLength);
     const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
-    
+
     process.stdout.write(`\r📊 进度: [${bar}] ${percent}% (${current}/${total}) | 耗时: ${formatDuration(elapsed)} | 预计剩余: ${formatDuration(eta)}`);
 }
 
 /**
- * 使用事务批量插入酒店数据
+ * 使用批量 SQL 插入酒店数据（优化版：最少网络往返）
+ * 原方案：每家酒店 3 次 INSERT（酒店/房型/图片），10000 家 = 30000 次网络往返
+ * 优化后：每批 3 次 INSERT，20 批 = 60 次网络往返
  */
 async function insertHotelsBatch(
     dataSource: DataSource,
     hotels: ReturnType<typeof generateHotels>,
     merchantId: number,
-    startIndex: number
+    _startIndex: number
 ): Promise<void> {
-    const hotelRepository = dataSource.getRepository(Hotel);
-    const roomTypeRepository = dataSource.getRepository(RoomType);
-    const imageRepository = dataSource.getRepository(HotelImage);
-
-    // 使用事务确保数据一致性
     await dataSource.transaction(async (manager) => {
-        for (const hotelData of hotels) {
-            const { roomTypes, images, status, ...hotelInfo } = hotelData;
+        // ① 批量插入所有酒店，一次 INSERT 拿回所有 id
+        const hotelEntities = hotels.map((h) => {
+            const { roomTypes, images, status, ...hotelInfo } = h;
+            return { ...hotelInfo, status: HotelStatus.APPROVED, merchantId };
+        });
 
-            // 插入酒店
-            const result = await manager.insert(Hotel, {
-                ...hotelInfo,
-                status: HotelStatus.APPROVED,
-                merchantId,
-            });
-            const hotelId = result.identifiers[0].id as number;
+        const hotelResult = await manager
+            .createQueryBuilder()
+            .insert()
+            .into(Hotel)
+            .values(hotelEntities)
+            .execute();
 
-            // 批量插入房型
-            if (roomTypes.length > 0) {
-                await manager.insert(
-                    RoomType,
-                    roomTypes.map((rt) => ({
-                        ...rt,
-                        hotelId,
-                    }))
-                );
+        const hotelIds: number[] = hotelResult.identifiers.map((r) => r.id as number);
+
+        // ② 批量插入所有房型
+        const allRoomTypes: any[] = [];
+        for (let i = 0; i < hotels.length; i++) {
+            const hotelId = hotelIds[i];
+            for (const rt of hotels[i].roomTypes) {
+                allRoomTypes.push({ ...rt, hotelId });
             }
+        }
+        if (allRoomTypes.length > 0) {
+            await manager
+                .createQueryBuilder()
+                .insert()
+                .into(RoomType)
+                .values(allRoomTypes)
+                .execute();
+        }
 
-            // 使用真实 hotelId 重新生成图片，避免不同酒店主图重复
-            const cityIndex = getCityIndexFromName(hotelData.nameCn);
-            const imageCount = Math.min(4, Math.max(2, images.length));
+        // ③ 批量插入所有图片（使用真实 hotelId 生成唯一图片）
+        const allImages: any[] = [];
+        for (let i = 0; i < hotels.length; i++) {
+            const hotelId = hotelIds[i];
+            const cityIndex = getCityIndexFromName(hotels[i].nameCn);
+            const imageCount = Math.min(4, Math.max(2, hotels[i].images.length));
             const imagesToSave = generateHotelImages(hotelId, cityIndex, imageCount);
-
-            if (imagesToSave.length > 0) {
-                await manager.insert(
-                    HotelImage,
-                    imagesToSave.map((img, i) => ({
-                        ...img,
-                        sortOrder: i,
-                        hotelId,
-                    }))
-                );
+            for (let j = 0; j < imagesToSave.length; j++) {
+                allImages.push({ ...imagesToSave[j], sortOrder: j, hotelId });
+            }
+        }
+        if (allImages.length > 0) {
+            // 图片数量大，分块插入避免 SQL 参数过多
+            const IMG_CHUNK = 2000;
+            for (let c = 0; c < allImages.length; c += IMG_CHUNK) {
+                await manager
+                    .createQueryBuilder()
+                    .insert()
+                    .into(HotelImage)
+                    .values(allImages.slice(c, c + IMG_CHUNK))
+                    .execute();
             }
         }
     });
@@ -203,7 +216,7 @@ async function generateMassHotels() {
     const totalTime = Date.now() - startTime;
     console.log(`\n🎉 生成完成！总耗时: ${formatDuration(totalTime)}`);
     console.log(`   平均速度: ${Math.floor(toGenerate / (totalTime / 1000))} 家/秒`);
-    
+
     // 验证最终数量
     const finalCount = await hotelRepository.count();
     console.log(`   数据库酒店总数: ${finalCount.toLocaleString()} 家`);
