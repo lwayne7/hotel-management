@@ -1,12 +1,16 @@
 import { Controller, Get, Param, Query, ParseIntPipe, Sse, MessageEvent } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { Observable, interval, map } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { HotelsService } from './hotels.service';
+import { PriceUpdatesService } from './price-updates.service';
 
 @ApiTags('用户端-酒店')
 @Controller('public/hotels')
 export class PublicHotelsController {
-  constructor(private readonly hotelsService: HotelsService) {}
+  constructor(
+    private readonly hotelsService: HotelsService,
+    private readonly priceUpdatesService: PriceUpdatesService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: '获取已发布酒店列表（用户端，无需登录）' })
@@ -65,12 +69,13 @@ export class PublicHotelsController {
   }
 
   @Sse('price-updates')
-  @ApiOperation({ summary: '实时价格更新推送（SSE），用户端可通过 EventSource 订阅价格变动' })
+  @ApiOperation({
+    summary:
+      '实时价格更新推送（SSE）。事件字段：type、timestamp、hotelId?、changeKind、version?',
+  })
   priceUpdates(): Observable<MessageEvent> {
-    return interval(30000).pipe(
-      map(() => ({
-        data: { timestamp: Date.now(), type: 'price-update' },
-      } as MessageEvent)),
+    return this.priceUpdatesService.stream().pipe(
+      map((event) => ({ data: event } as MessageEvent)),
     );
   }
 

@@ -11,6 +11,7 @@ import { HotelImage } from './entities/hotel-image.entity';
 import { CreateHotelDto, UpdateHotelDto } from './dto';
 import { getPlaceholderImageUrl } from './constants/placeholder-images';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { PriceUpdatesService } from './price-updates.service';
 
 function toNumber(value: unknown): number {
   if (typeof value === 'number') return value;
@@ -79,6 +80,7 @@ export class HotelsService {
     @InjectRepository(HotelImage)
     private hotelImagesRepository: Repository<HotelImage>,
     private readonly notificationsGateway: NotificationsGateway,
+    private readonly priceUpdatesService: PriceUpdatesService,
   ) {}
 
   private normalizeHotel(hotel: Hotel): Hotel {
@@ -201,6 +203,7 @@ export class HotelsService {
     merchantId: number,
   ): Promise<Hotel> {
     const hotel = await this.findOne(id);
+    const prevStatus = hotel.status;
 
     // 验证所有权
     if (hotel.merchantId !== merchantId) {
@@ -249,6 +252,14 @@ export class HotelsService {
         );
         await this.hotelImagesRepository.save(imageEntities);
       }
+    }
+
+    if (prevStatus === HotelStatus.APPROVED && hotel.status !== HotelStatus.APPROVED) {
+      this.priceUpdatesService.emit('hotel_hidden', id);
+    } else if (hotel.status === HotelStatus.APPROVED && roomTypes !== undefined) {
+      this.priceUpdatesService.emit('price_changed', id);
+    } else if (hotel.status === HotelStatus.APPROVED) {
+      this.priceUpdatesService.emit('hotel_updated', id);
     }
 
     return this.findOne(id);
@@ -361,6 +372,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetRole: 'merchant',
     });
+    this.priceUpdatesService.emit('hotel_online', saved.id);
     return this.normalizeHotel(saved);
   }
 
@@ -396,6 +408,7 @@ export class HotelsService {
 
     hotel.status = HotelStatus.OFFLINE;
     const saved = await this.hotelsRepository.save(hotel);
+    this.priceUpdatesService.emit('hotel_offline', saved.id);
     return this.normalizeHotel(saved);
   }
 
@@ -409,6 +422,7 @@ export class HotelsService {
 
     hotel.status = HotelStatus.APPROVED;
     const saved = await this.hotelsRepository.save(hotel);
+    this.priceUpdatesService.emit('hotel_online', saved.id);
     return this.normalizeHotel(saved);
   }
 
