@@ -272,8 +272,11 @@ const ReviewList: React.FC = () => {
   ];
 
   return (
-    <div className="admin-review">
-      <Title level={3}>酒店审核</Title>
+    <div className="admin-review page-shell">
+      <div className="admin-review-header">
+        <Title level={3} className="page-title">酒店审核</Title>
+        <Text className="page-subtitle">统一处理酒店提审、驳回原因和发布上下线流程</Text>
+      </div>
 
       <Tabs
         activeKey={activeStatus}
@@ -285,6 +288,7 @@ const ReviewList: React.FC = () => {
       />
 
       <Table
+        className="pretty-table"
         columns={columns}
         dataSource={hotels}
         rowKey="id"

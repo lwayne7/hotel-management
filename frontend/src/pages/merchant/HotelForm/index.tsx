@@ -32,7 +32,7 @@ import type { Hotel, HotelImage, HotelStatus, RoomType } from '../../../types/ho
 import { getApiErrorMessage, isFormValidationError } from '../../../utils/error';
 import './index.css';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const discountTypeOptions = [
@@ -187,15 +187,20 @@ const HotelForm: React.FC = () => {
   };
 
   return (
-    <div className="hotel-form-page">
+    <div className="hotel-form-page page-shell">
       <div className="page-header">
         <Space>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
             返回
           </Button>
-          <Title level={3} style={{ margin: 0 }}>
-            {isEdit ? (isReadOnly ? '查看酒店' : '编辑酒店') : '新增酒店'}
-          </Title>
+          <div className="page-header-text">
+            <Title level={3} className="page-title" style={{ margin: 0 }}>
+              {isEdit ? (isReadOnly ? '查看酒店' : '编辑酒店') : '新增酒店'}
+            </Title>
+            <Text className="page-subtitle">
+              {isReadOnly ? '当前状态为审核中，仅支持查看。' : '请按字段完整填写，保存后可提交审核。'}
+            </Text>
+          </div>
         </Space>
         {!isReadOnly && (
           <Space>

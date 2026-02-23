@@ -29,7 +29,7 @@ import { getApiErrorMessage } from '../../../utils/error';
 import dayjs from 'dayjs';
 import './index.css';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 type MerchantFilterStatus = 'all' | HotelStatus;
 
@@ -214,9 +214,12 @@ const MerchantHotels: React.FC = () => {
   ];
 
   return (
-    <div className="merchant-hotels">
+    <div className="merchant-hotels page-shell">
       <div className="page-header">
-        <Title level={3}>我的酒店</Title>
+        <div>
+          <Title level={3} className="page-title">我的酒店</Title>
+          <Text className="page-subtitle">管理酒店信息、提交审核并跟踪状态变化</Text>
+        </div>
         <Button
           type="primary"
           icon={<PlusOutlined />}
@@ -247,6 +250,7 @@ const MerchantHotels: React.FC = () => {
       </div>
 
       <Table
+        className="pretty-table"
         columns={columns}
         dataSource={hotels}
         rowKey="id"

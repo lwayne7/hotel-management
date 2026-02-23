@@ -4,6 +4,7 @@ import { BellOutlined } from '@ant-design/icons';
 import { io, Socket } from 'socket.io-client';
 import { useAppSelector } from '../../store/hooks';
 import dayjs from 'dayjs';
+import './index.css';
 
 interface Notification {
   type: string;
@@ -47,7 +48,7 @@ const NotificationBell: React.FC = () => {
   };
 
   const content = (
-    <div style={{ width: 320, maxHeight: 400, overflow: 'auto' }}>
+    <div className="notice-popover">
       {notifications.length === 0 ? (
         <Empty description="暂无通知" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
@@ -55,7 +56,7 @@ const NotificationBell: React.FC = () => {
           size="small"
           dataSource={notifications}
           renderItem={(item) => (
-            <List.Item style={{ padding: '8px 0' }}>
+            <List.Item className="notice-item">
               <div>
                 <Text style={{ fontSize: 13 }}>{item.message}</Text>
                 <br />
@@ -68,7 +69,7 @@ const NotificationBell: React.FC = () => {
         />
       )}
       {notifications.length > 0 && (
-        <div style={{ textAlign: 'center', padding: '4px 0' }}>
+        <div className="notice-clear">
           <Button type="link" size="small" onClick={() => setNotifications([])}>
             清空通知
           </Button>
@@ -86,7 +87,7 @@ const NotificationBell: React.FC = () => {
       onOpenChange={handleOpen}
     >
       <Badge count={unread} size="small" offset={[-2, 2]}>
-        <BellOutlined style={{ fontSize: 18, cursor: 'pointer', padding: '4px 8px' }} />
+        <BellOutlined className="notice-bell" />
       </Badge>
     </Popover>
   );

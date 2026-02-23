@@ -1,0 +1,41 @@
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.home-hero {
+  background: linear-gradient(135deg, #f7fbff 0%, #edf5ff 62%, #f0fbf8 100%);
+  border: 1px solid #e2ecff;
+}
+
+.home-stats-row {
+  margin-top: 4px;
+}
+
+.stat-card {
+  border-radius: 14px;
+  border: 1px solid #e8eef8;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(15, 39, 72, 0.12);
+}
+
+.stat-card-blue {
+  background: linear-gradient(155deg, #ffffff 0%, #f2f7ff 100%);
+}
+
+.stat-card-success {
+  background: linear-gradient(155deg, #ffffff 0%, #eefaf6 100%);
+}
+
+.stat-card-warn {
+  background: linear-gradient(155deg, #ffffff 0%, #fff8ef 100%);
+}
+
+.stat-card-danger {
+  background: linear-gradient(155deg, #ffffff 0%, #fff2f3 100%);
+}

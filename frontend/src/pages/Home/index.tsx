@@ -3,6 +3,7 @@ import { Card, Row, Col, Statistic, Typography, Spin } from 'antd';
 import { ShopOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, StopOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useAppSelector } from '../../store/hooks';
 import { hotelApi } from '../../services/api';
+import './index.css';
 
 const { Title, Paragraph } = Typography;
 
@@ -50,20 +51,22 @@ const Home: React.FC = () => {
   }, [loadStatistics]);
 
   return (
-    <div>
-      <Title level={2}>
-        欢迎回来，{user?.nickname || user?.username}！
-      </Title>
-      <Paragraph type="secondary">
-        您当前的角色是：{user?.role === 'merchant' ? '商户' : '管理员'}
-      </Paragraph>
+    <div className="home-page">
+      <Card className="home-hero" bordered={false}>
+        <Title level={2} className="page-title">
+          欢迎回来，{user?.nickname || user?.username}！
+        </Title>
+        <Paragraph className="page-subtitle">
+          您当前的角色是：{user?.role === 'merchant' ? '商户' : '管理员'}，以下是今日业务概览。
+        </Paragraph>
+      </Card>
 
       <Spin spinning={loading}>
-        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        <Row gutter={[16, 16]} className="home-stats-row">
           {user?.role === 'merchant' && merchantStats && (
             <>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-blue">
                   <Statistic
                     title="我的酒店"
                     value={merchantStats.total}
@@ -72,7 +75,7 @@ const Home: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card">
                   <Statistic
                     title="草稿"
                     value={merchantStats.draft}
@@ -81,7 +84,7 @@ const Home: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-warn">
                   <Statistic
                     title="待审核"
                     value={merchantStats.pending}
@@ -91,7 +94,7 @@ const Home: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-success">
                   <Statistic
                     title="已上线"
                     value={merchantStats.approved}
@@ -106,7 +109,7 @@ const Home: React.FC = () => {
           {user?.role === 'admin' && adminStats && (
             <>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-warn">
                   <Statistic
                     title="待审核酒店"
                     value={adminStats.pending}
@@ -116,7 +119,7 @@ const Home: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-success">
                   <Statistic
                     title="已发布酒店"
                     value={adminStats.approved}
@@ -126,7 +129,7 @@ const Home: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-danger">
                   <Statistic
                     title="已下线酒店"
                     value={adminStats.offline}
@@ -136,7 +139,7 @@ const Home: React.FC = () => {
                 </Card>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <Card>
+                <Card className="stat-card stat-card-blue">
                   <Statistic
                     title="总酒店数"
                     value={adminStats.total}

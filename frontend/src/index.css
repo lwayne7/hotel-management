@@ -4,15 +4,88 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+:root {
+  --brand-primary: #1f6feb;
+  --brand-primary-soft: #edf4ff;
+  --brand-success: #1a9b7d;
+  --brand-warning: #d9892f;
+  --brand-danger: #d84f5f;
+  --text-main: #1f2a43;
+  --text-sub: #637188;
+  --border-soft: #e7edf8;
+  --card-bg: #ffffff;
+  --page-bg: #f3f6fb;
+  --shadow-soft: 0 8px 24px rgba(22, 44, 80, 0.08);
+}
+
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
+  font-family: 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 0% 0%, rgba(31, 111, 235, 0.09), transparent 36%),
+    radial-gradient(circle at 100% 0%, rgba(26, 155, 125, 0.08), transparent 32%),
+    var(--page-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--brand-primary);
+}
+
+.page-shell {
+  background: var(--card-bg);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.page-title {
+  margin-bottom: 4px !important;
+}
+
+.page-subtitle {
+  color: var(--text-sub);
+}
+
+.ant-card {
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+}
+
+.ant-table-wrapper .ant-table {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  font-weight: 600;
+}
+
+.ant-form-item-label > label {
+  font-weight: 600;
+  color: #25324d !important;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number-focused,
+.ant-picker-focused,
+.ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15) !important;
 }

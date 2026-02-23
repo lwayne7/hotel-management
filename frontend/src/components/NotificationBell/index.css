@@ -1,0 +1,28 @@
+.notice-bell {
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 10px;
+  color: #27406c;
+  transition: all 0.2s ease;
+}
+
+.notice-bell:hover {
+  background: #eef4ff;
+  color: #1f6feb;
+}
+
+.notice-popover {
+  width: 320px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.notice-item {
+  padding: 8px 0 !important;
+}
+
+.notice-clear {
+  text-align: center;
+  padding: 4px 0;
+}

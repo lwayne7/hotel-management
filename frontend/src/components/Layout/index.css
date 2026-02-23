@@ -11,6 +11,32 @@
 
 .main-layout {
   min-height: 100vh;
+  background: radial-gradient(circle at 0% 0%, rgba(53, 121, 246, 0.08), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(28, 183, 146, 0.09), transparent 30%),
+    #f3f6fb;
+}
+
+.main-layout .ant-layout-sider {
+  border-right: 1px solid #e8edf7;
+  box-shadow: 0 10px 24px rgba(13, 40, 80, 0.08);
+  z-index: 2;
+}
+
+.main-layout .ant-menu {
+  border-inline-end: 0 !important;
+  padding: 8px;
+}
+
+.main-layout .ant-menu-item {
+  border-radius: 10px;
+  margin-bottom: 4px;
+  color: #33435f;
+}
+
+.main-layout .ant-menu-item-selected {
+  background: #eaf2ff !important;
+  color: #1f6feb !important;
+  font-weight: 600;
 }
 
 .main-layout .ant-layout-content > * {
@@ -18,39 +44,105 @@
 }
 
 .logo {
-  height: 64px;
+  height: 68px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: bold;
-  color: #1890ff;
-  border-bottom: 1px solid #f0f0f0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1458c4;
+  border-bottom: 1px solid #eef2fb;
+  letter-spacing: 0.5px;
+  background: linear-gradient(120deg, #f6f9ff 0%, #edf5ff 100%);
+}
+
+.main-layout-header {
+  padding: 0 20px;
+  border-bottom: 1px solid #edf2fc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.main-layout-content {
+  box-shadow: 0 14px 32px rgba(10, 35, 66, 0.08);
+  border: 1px solid #e8eefb;
+}
+
+.collapse-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.collapse-btn:hover {
+  background: #eef4ff !important;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.3s;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  background: #ffffff;
+  font: inherit;
 }
 
 .user-info:hover {
-  background: #f5f5f5;
+  background: #f4f8ff;
+  border-color: #dbe8ff;
+  transform: translateY(-1px);
 }
 
 .username {
   font-size: 14px;
-  color: #333;
+  color: #1f2a43;
+  font-weight: 600;
 }
 
 .role-tag {
   font-size: 12px;
-  color: #999;
-  background: #f0f0f0;
-  padding: 2px 8px;
-  border-radius: 4px;
+  color: #2f5fb2;
+  background: #e9f1ff;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.profile-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.profile-modal-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2a43;
+  margin-bottom: 4px;
+}
+
+.profile-modal-desc .ant-descriptions-item-label {
+  width: 88px;
+  background: #f7faff;
+}
+
+.profile-modal-tip {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
 }
