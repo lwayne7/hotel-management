@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Table,
   Button,
@@ -18,22 +18,33 @@ import {
   Row,
   Col,
 } from 'antd';
+import type { TableProps, TabsProps } from 'antd';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   StopOutlined,
   PlayCircleOutlined,
   EyeOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
-import { hotelApi } from '../../../services/api';
-import type { Hotel } from '../../../types/hotel';
+import { hotelApi, type HotelListResult, type HotelListParams } from '../../../services/api';
+import type { Hotel, HotelStatus, HotelImage, RoomType } from '../../../types/hotel';
+import { getApiErrorMessage, isFormValidationError } from '../../../utils/error';
 import dayjs from 'dayjs';
 import './index.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const statusConfig: Record<string, { color: string; text: string }> = {
+type AdminFilterStatus = HotelStatus | 'all';
+
+interface PaginationState {
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+const statusConfig: Record<HotelStatus, { color: string; text: string }> = {
   draft: { color: 'default', text: '草稿' },
   pending: { color: 'processing', text: '待审核' },
   approved: { color: 'success', text: '已发布' },
@@ -44,8 +55,8 @@ const statusConfig: Record<string, { color: string; text: string }> = {
 const ReviewList: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeStatus, setActiveStatus] = useState<string>('pending');
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [activeStatus, setActiveStatus] = useState<AdminFilterStatus>('pending');
+  const [pagination, setPagination] = useState<PaginationState>({ page: 1, pageSize: 10, total: 0 });
   const [detailModal, setDetailModal] = useState<{ visible: boolean; hotel: Hotel | null }>({
     visible: false,
     hotel: null,
@@ -54,50 +65,51 @@ const ReviewList: React.FC = () => {
     visible: false,
     hotelId: null,
   });
-  const [rejectForm] = Form.useForm();
+  const [rejectForm] = Form.useForm<{ reason: string }>();
 
-  useEffect(() => {
-    loadHotels();
-  }, [activeStatus, pagination.page]);
-
-  const loadHotels = async () => {
+  const loadHotels = useCallback(async () => {
     try {
       setLoading(true);
-      const params: any = { page: pagination.page, pageSize: pagination.pageSize };
+      const params: HotelListParams = { page: pagination.page, pageSize: pagination.pageSize };
       if (activeStatus !== 'all') {
         params.status = activeStatus;
       }
-      const response: any = await hotelApi.getPendingHotels(params);
+      const response: HotelListResult = await hotelApi.getPendingHotels(params);
       setHotels(response.data);
       setPagination((prev) => ({ ...prev, total: response.total }));
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '加载失败');
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '加载失败'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeStatus, pagination.page, pagination.pageSize]);
+
+  useEffect(() => {
+    void loadHotels();
+  }, [loadHotels]);
 
   const handleApprove = async (id: number) => {
     try {
       await hotelApi.approveHotel(id);
       message.success('审核通过');
-      loadHotels();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '操作失败');
+      await loadHotels();
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '操作失败'));
     }
   };
 
   const handleReject = async () => {
+    if (!rejectModal.hotelId) return;
     try {
       const { reason } = await rejectForm.validateFields();
-      await hotelApi.rejectHotel(rejectModal.hotelId!, reason);
+      await hotelApi.rejectHotel(rejectModal.hotelId, reason);
       message.success('已驳回');
       setRejectModal({ visible: false, hotelId: null });
       rejectForm.resetFields();
-      loadHotels();
-    } catch (error: any) {
-      if (!error.errorFields) {
-        message.error(error.response?.data?.message || '操作失败');
+      await loadHotels();
+    } catch (error: unknown) {
+      if (!isFormValidationError(error)) {
+        message.error(getApiErrorMessage(error, '操作失败'));
       }
     }
   };
@@ -106,9 +118,9 @@ const ReviewList: React.FC = () => {
     try {
       await hotelApi.offlineHotel(id);
       message.success('已下线');
-      loadHotels();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '操作失败');
+      await loadHotels();
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '操作失败'));
     }
   };
 
@@ -116,13 +128,13 @@ const ReviewList: React.FC = () => {
     try {
       await hotelApi.onlineHotel(id);
       message.success('已恢复上线');
-      loadHotels();
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '操作失败');
+      await loadHotels();
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '操作失败'));
     }
   };
 
-  const columns = [
+  const columns: TableProps<Hotel>['columns'] = [
     {
       title: '酒店名称',
       dataIndex: 'nameCn',
@@ -139,7 +151,7 @@ const ReviewList: React.FC = () => {
     {
       title: '商户',
       key: 'merchant',
-      render: (_: any, record: Hotel) =>
+      render: (_: unknown, record: Hotel) =>
         record.merchant?.nickname || record.merchant?.username || '-',
     },
     {
@@ -160,9 +172,27 @@ const ReviewList: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => (
+      render: (status: HotelStatus) => (
         <Tag color={statusConfig[status]?.color}>{statusConfig[status]?.text}</Tag>
       ),
+    },
+    {
+      title: '驳回原因',
+      key: 'rejectReason',
+      width: 160,
+      render: (_: unknown, record: Hotel) => {
+        if (!record.rejectReason) return '-';
+        return (
+          <Tooltip title={record.rejectReason}>
+            <Space size={4}>
+              <InfoCircleOutlined style={{ color: '#ff4d4f' }} />
+              <Text ellipsis style={{ maxWidth: 110 }}>
+                {record.rejectReason}
+              </Text>
+            </Space>
+          </Tooltip>
+        );
+      },
     },
     {
       title: '提交时间',
@@ -175,7 +205,7 @@ const ReviewList: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 220,
-      render: (_: any, record: Hotel) => (
+      render: (_: unknown, record: Hotel) => (
         <Space size="small">
           <Tooltip title="查看详情">
             <Button
@@ -192,7 +222,7 @@ const ReviewList: React.FC = () => {
                 size="small"
                 icon={<CheckCircleOutlined />}
                 style={{ color: '#52c41a' }}
-                onClick={() => handleApprove(record.id)}
+                onClick={() => void handleApprove(record.id)}
               >
                 通过
               </Button>
@@ -212,7 +242,7 @@ const ReviewList: React.FC = () => {
               type="link"
               size="small"
               icon={<StopOutlined />}
-              onClick={() => handleOffline(record.id)}
+              onClick={() => void handleOffline(record.id)}
             >
               下线
             </Button>
@@ -223,7 +253,7 @@ const ReviewList: React.FC = () => {
               size="small"
               icon={<PlayCircleOutlined />}
               style={{ color: '#52c41a' }}
-              onClick={() => handleOnline(record.id)}
+              onClick={() => void handleOnline(record.id)}
             >
               上线
             </Button>
@@ -233,7 +263,7 @@ const ReviewList: React.FC = () => {
     },
   ];
 
-  const tabItems = [
+  const tabItems: TabsProps['items'] = [
     { key: 'pending', label: '待审核' },
     { key: 'approved', label: '已发布' },
     { key: 'rejected', label: '已驳回' },
@@ -248,7 +278,7 @@ const ReviewList: React.FC = () => {
       <Tabs
         activeKey={activeStatus}
         onChange={(key) => {
-          setActiveStatus(key);
+          setActiveStatus(key as AdminFilterStatus);
           setPagination((prev) => ({ ...prev, page: 1 }));
         }}
         items={tabItems}
@@ -268,7 +298,6 @@ const ReviewList: React.FC = () => {
         }}
       />
 
-      {/* 详情弹窗 */}
       <Modal
         title="酒店详情"
         open={detailModal.visible}
@@ -322,15 +351,14 @@ const ReviewList: React.FC = () => {
               </Descriptions.Item>
             </Descriptions>
 
-            {/* 酒店图片展示（仅一处） */}
             {detailModal.hotel.images && detailModal.hotel.images.length > 0 && (
               <Card title="酒店图片" size="small" style={{ marginTop: 16 }}>
                 <Image.PreviewGroup>
                   <Row gutter={[8, 8]}>
                     {detailModal.hotel.images
                       .slice()
-                      .sort((a: any, b: any) => Number(a?.sortOrder ?? 0) - Number(b?.sortOrder ?? 0))
-                      .map((img: any) => (
+                      .sort((a: HotelImage, b: HotelImage) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+                      .map((img: HotelImage) => (
                         <Col span={8} key={img.id ?? img.imageUrl}>
                           <Image
                             src={img.imageUrl}
@@ -355,32 +383,31 @@ const ReviewList: React.FC = () => {
               <Card title="房型信息" size="small" style={{ marginTop: 16 }}>
                 {detailModal.hotel.roomTypes
                   .slice()
-                  .sort((a, b) => Number(a?.price) - Number(b?.price))
-                  .map((room, index) => (
-                  <div key={index} style={{ marginBottom: 8 }}>
-                    <Text strong>{room.name}</Text>
-                    <Text style={{ marginLeft: 16 }}>¥{room.price}</Text>
-                    {room.originalPrice && (
-                      <Text delete type="secondary" style={{ marginLeft: 8 }}>
-                        ¥{room.originalPrice}
+                  .sort((a: RoomType, b: RoomType) => Number(a.price) - Number(b.price))
+                  .map((room: RoomType, index: number) => (
+                    <div key={room.id ?? index} style={{ marginBottom: 8 }}>
+                      <Text strong>{room.name}</Text>
+                      <Text style={{ marginLeft: 16 }}>¥{room.price}</Text>
+                      {room.originalPrice && (
+                        <Text delete type="secondary" style={{ marginLeft: 8 }}>
+                          ¥{room.originalPrice}
+                        </Text>
+                      )}
+                      <Text type="secondary" style={{ marginLeft: 16 }}>
+                        最多{room.maxGuests}人入住
                       </Text>
-                    )}
-                    <Text type="secondary" style={{ marginLeft: 16 }}>
-                      最多{room.maxGuests}人入住
-                    </Text>
-                  </div>
-                ))}
+                    </div>
+                  ))}
               </Card>
             )}
           </div>
         )}
       </Modal>
 
-      {/* 驳回原因弹窗 */}
       <Modal
         title="驳回原因"
         open={rejectModal.visible}
-        onOk={handleReject}
+        onOk={() => void handleReject()}
         onCancel={() => {
           setRejectModal({ visible: false, hotelId: null });
           rejectForm.resetFields();

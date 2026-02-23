@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authApi, type LoginParams, type RegisterParams, type AuthResponse } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/error';
 
 export type UserRole = 'merchant' | 'admin';
 
@@ -18,40 +19,49 @@ interface AuthState {
   error: string | null;
 }
 
+function parseStoredUser(): User | null {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as User;
+  } catch {
+    return null;
+  }
+}
+
 const initialState: AuthState = {
-  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  user: parseStoredUser(),
   token: localStorage.getItem('token'),
   isLoading: false,
   error: null,
 };
 
-// 异步 Thunks
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<AuthResponse, LoginParams, { rejectValue: string }>(
   'auth/login',
-  async (params: LoginParams, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
       const response = await authApi.login(params);
       localStorage.setItem('token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '登录失败');
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, '登录失败'));
     }
-  }
+  },
 );
 
-export const register = createAsyncThunk(
+export const register = createAsyncThunk<AuthResponse, RegisterParams, { rejectValue: string }>(
   'auth/register',
-  async (params: RegisterParams, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
       const response = await authApi.register(params);
       localStorage.setItem('token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '注册失败');
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, '注册失败'));
     }
-  }
+  },
 );
 
 const authSlice = createSlice({
@@ -71,35 +81,31 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(login.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false;
-        const payload = action.payload as AuthResponse;
-        state.user = payload.user as User;
-        state.token = payload.access_token;
+        state.user = action.payload.user;
+        state.token = action.payload.access_token;
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload ?? '登录失败';
       })
-      // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        const payload = action.payload as AuthResponse;
-        state.user = payload.user as User;
-        state.token = payload.access_token;
+        state.user = action.payload.user;
+        state.token = action.payload.access_token;
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload ?? '注册失败';
       });
   },
 });

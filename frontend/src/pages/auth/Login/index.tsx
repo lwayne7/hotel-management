@@ -9,6 +9,12 @@ import './auth.css';
 
 const { Title, Text } = Typography;
 
+interface LoginLocationState {
+  from?: {
+    pathname?: string;
+  };
+}
+
 const Login: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -16,7 +22,8 @@ const Login: React.FC = () => {
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const [form] = Form.useForm();
 
-  const from = (location.state as any)?.from?.pathname || '/';
+  const locationState = (location.state as LoginLocationState | null) ?? null;
+  const from = locationState?.from?.pathname || '/';
 
   React.useEffect(() => {
     if (error) {

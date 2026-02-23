@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { register, clearError } from '../../../store/slices/authSlice';
 import type { UserRole } from '../../../store/slices/authSlice';
-import type { AuthResponse } from '../../../services/api';
+import type { AuthResponse, RegisterParams } from '../../../services/api';
 import '../Login/auth.css';
 
 const { Title, Text } = Typography;
@@ -33,7 +33,13 @@ const Register: React.FC = () => {
   }, [error, dispatch]);
 
   const onFinish = async (values: RegisterFormValues) => {
-    const { confirmPassword, ...registerData } = values;
+    const registerData: RegisterParams = {
+      username: values.username,
+      password: values.password,
+      role: values.role,
+      nickname: values.nickname,
+      phone: values.phone,
+    };
     const result = await dispatch(register(registerData));
     if (register.fulfilled.match(result)) {
       message.success('注册成功');

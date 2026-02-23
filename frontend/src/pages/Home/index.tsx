@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, Row, Col, Statistic, Typography, Spin } from 'antd';
 import { ShopOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, StopOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useAppSelector } from '../../store/hooks';
@@ -28,11 +28,7 @@ const Home: React.FC = () => {
   const [merchantStats, setMerchantStats] = useState<MerchantStats | null>(null);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
 
-  useEffect(() => {
-    loadStatistics();
-  }, [user?.role]);
-
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       setLoading(true);
       if (user?.role === 'merchant') {
@@ -47,7 +43,11 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.role]);
+
+  useEffect(() => {
+    void loadStatistics();
+  }, [loadStatistics]);
 
   return (
     <div>

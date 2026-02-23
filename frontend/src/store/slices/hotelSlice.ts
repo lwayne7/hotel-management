@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { hotelApi } from '../../services/api';
+import { hotelApi, type HotelListResult } from '../../services/api';
+import { getApiErrorMessage } from '../../utils/error';
 import type { Hotel, HotelStatus, DiscountType, RoomType, HotelImage } from '../../types/hotel';
 
 export type { Hotel, HotelStatus, DiscountType, RoomType, HotelImage };
@@ -28,65 +29,61 @@ const initialState: HotelState = {
   },
 };
 
-// 异步 Thunks
-export const fetchMyHotels = createAsyncThunk(
-  'hotel/fetchMyHotels',
-  async (params: { page?: number; status?: HotelStatus; keyword?: string }, { rejectWithValue }) => {
-    try {
-      const response = await hotelApi.getMyHotels(params);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '获取酒店列表失败');
-    }
+export const fetchMyHotels = createAsyncThunk<
+  HotelListResult,
+  { page?: number; status?: HotelStatus; keyword?: string },
+  { rejectValue: string }
+>('hotel/fetchMyHotels', async (params, { rejectWithValue }) => {
+  try {
+    return await hotelApi.getMyHotels(params);
+  } catch (error: unknown) {
+    return rejectWithValue(getApiErrorMessage(error, '获取酒店列表失败'));
   }
-);
+});
 
-export const fetchHotelById = createAsyncThunk(
+export const fetchHotelById = createAsyncThunk<Hotel, number, { rejectValue: string }>(
   'hotel/fetchHotelById',
-  async (id: number, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
-      const response = await hotelApi.getHotelById(id);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '获取酒店详情失败');
+      return await hotelApi.getHotelById(id);
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, '获取酒店详情失败'));
     }
-  }
+  },
 );
 
-export const createHotel = createAsyncThunk(
+export const createHotel = createAsyncThunk<Hotel, Partial<Hotel>, { rejectValue: string }>(
   'hotel/createHotel',
-  async (data: Partial<Hotel>, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
-      const response = await hotelApi.createHotel(data);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '创建酒店失败');
+      return await hotelApi.createHotel(data);
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, '创建酒店失败'));
     }
-  }
+  },
 );
 
-export const updateHotel = createAsyncThunk(
-  'hotel/updateHotel',
-  async ({ id, data }: { id: number; data: Partial<Hotel> }, { rejectWithValue }) => {
-    try {
-      const response = await hotelApi.updateHotel(id, data);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '更新酒店失败');
-    }
+export const updateHotel = createAsyncThunk<
+  Hotel,
+  { id: number; data: Partial<Hotel> },
+  { rejectValue: string }
+>('hotel/updateHotel', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    return await hotelApi.updateHotel(id, data);
+  } catch (error: unknown) {
+    return rejectWithValue(getApiErrorMessage(error, '更新酒店失败'));
   }
-);
+});
 
-export const submitForReview = createAsyncThunk(
+export const submitForReview = createAsyncThunk<Hotel, number, { rejectValue: string }>(
   'hotel/submitForReview',
-  async (id: number, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
-      const response = await hotelApi.submitForReview(id);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || '提交审核失败');
+      return await hotelApi.submitForReview(id);
+    } catch (error: unknown) {
+      return rejectWithValue(getApiErrorMessage(error, '提交审核失败'));
     }
-  }
+  },
 );
 
 const hotelSlice = createSlice({
@@ -102,68 +99,68 @@ const hotelSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch my hotels
       .addCase(fetchMyHotels.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchMyHotels.fulfilled, (state, action) => {
         state.isLoading = false;
-        const payload = action.payload as unknown as { data: Hotel[]; page: number; pageSize: number; total: number };
-        state.hotels = payload.data;
+        state.hotels = action.payload.data;
         state.pagination = {
-          page: payload.page,
-          pageSize: payload.pageSize,
-          total: payload.total,
+          page: action.payload.page,
+          pageSize: action.payload.pageSize,
+          total: action.payload.total,
         };
       })
       .addCase(fetchMyHotels.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload ?? '获取酒店列表失败';
       })
-      // Fetch hotel by id
       .addCase(fetchHotelById.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchHotelById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.currentHotel = action.payload as unknown as Hotel;
+        state.currentHotel = action.payload;
       })
       .addCase(fetchHotelById.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload ?? '获取酒店详情失败';
       })
-      // Create hotel
       .addCase(createHotel.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(createHotel.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.hotels.unshift(action.payload as unknown as Hotel);
+        state.hotels.unshift(action.payload);
       })
       .addCase(createHotel.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.payload ?? '创建酒店失败';
       })
-      // Update hotel
       .addCase(updateHotel.fulfilled, (state, action) => {
         state.isLoading = false;
-        const hotel = action.payload as unknown as Hotel;
-        const index = state.hotels.findIndex((h) => h.id === hotel.id);
+        const updatedHotel = action.payload;
+        const index = state.hotels.findIndex((hotel) => hotel.id === updatedHotel.id);
         if (index !== -1) {
-          state.hotels[index] = hotel;
+          state.hotels[index] = updatedHotel;
         }
-        state.currentHotel = hotel;
+        state.currentHotel = updatedHotel;
       })
-      // Submit for review
+      .addCase(updateHotel.rejected, (state, action) => {
+        state.error = action.payload ?? '更新酒店失败';
+      })
       .addCase(submitForReview.fulfilled, (state, action) => {
-        const hotel = action.payload as unknown as Hotel;
-        const index = state.hotels.findIndex((h) => h.id === hotel.id);
+        const submittedHotel = action.payload;
+        const index = state.hotels.findIndex((hotel) => hotel.id === submittedHotel.id);
         if (index !== -1) {
-          state.hotels[index] = hotel;
+          state.hotels[index] = submittedHotel;
         }
+      })
+      .addCase(submitForReview.rejected, (state, action) => {
+        state.error = action.payload ?? '提交审核失败';
       });
   },
 });

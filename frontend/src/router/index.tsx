@@ -1,10 +1,8 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { lazy, Suspense, type ReactNode } from 'react';
+import { Spin } from 'antd';
 import MainLayout from '../components/Layout';
 import AuthRoute from '../components/AuthRoute';
-
-// 页面懒加载
-import { lazy, Suspense } from 'react';
-import { Spin } from 'antd';
 
 const Login = lazy(() => import('../pages/auth/Login'));
 const Register = lazy(() => import('../pages/auth/Register'));
@@ -15,34 +13,24 @@ const AdminReview = lazy(() => import('../pages/admin/ReviewList'));
 const Forbidden = lazy(() => import('../pages/error/403'));
 const NotFound = lazy(() => import('../pages/error/404'));
 
-const LazyLoad = ({ children }: { children: React.ReactNode }) => (
-  <Suspense
-    fallback={
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-        <Spin size="large" />
-      </div>
-    }
-  >
-    {children}
-  </Suspense>
+const suspenseFallback = (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+    <Spin size="large" />
+  </div>
+);
+
+const withSuspense = (children: ReactNode) => (
+  <Suspense fallback={suspenseFallback}>{children}</Suspense>
 );
 
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: (
-      <LazyLoad>
-        <Login />
-      </LazyLoad>
-    ),
+    element: withSuspense(<Login />),
   },
   {
     path: '/register',
-    element: (
-      <LazyLoad>
-        <Register />
-      </LazyLoad>
-    ),
+    element: withSuspense(<Register />),
   },
   {
     path: '/',
@@ -54,20 +42,13 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: (
-          <LazyLoad>
-            <Home />
-          </LazyLoad>
-        ),
+        element: withSuspense(<Home />),
       },
-      // 商户端路由
       {
         path: 'merchant/hotels',
         element: (
           <AuthRoute roles={['merchant']}>
-            <LazyLoad>
-              <MerchantHotels />
-            </LazyLoad>
+            {withSuspense(<MerchantHotels />)}
           </AuthRoute>
         ),
       },
@@ -75,9 +56,7 @@ const router = createBrowserRouter([
         path: 'merchant/hotels/create',
         element: (
           <AuthRoute roles={['merchant']}>
-            <LazyLoad>
-              <HotelForm />
-            </LazyLoad>
+            {withSuspense(<HotelForm />)}
           </AuthRoute>
         ),
       },
@@ -85,20 +64,15 @@ const router = createBrowserRouter([
         path: 'merchant/hotels/:id/edit',
         element: (
           <AuthRoute roles={['merchant']}>
-            <LazyLoad>
-              <HotelForm />
-            </LazyLoad>
+            {withSuspense(<HotelForm />)}
           </AuthRoute>
         ),
       },
-      // 管理员端路由
       {
         path: 'admin/review',
         element: (
           <AuthRoute roles={['admin']}>
-            <LazyLoad>
-              <AdminReview />
-            </LazyLoad>
+            {withSuspense(<AdminReview />)}
           </AuthRoute>
         ),
       },
@@ -106,19 +80,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/403',
-    element: (
-      <LazyLoad>
-        <Forbidden />
-      </LazyLoad>
-    ),
+    element: withSuspense(<Forbidden />),
   },
   {
     path: '*',
-    element: (
-      <LazyLoad>
-        <NotFound />
-      </LazyLoad>
-    ),
+    element: withSuspense(<NotFound />),
   },
 ]);
 

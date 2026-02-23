@@ -76,13 +76,14 @@ export const authApi = {
 };
 
 // 酒店类型 - 使用共享类型
-import type { Hotel } from '../types/hotel';
+import type { Hotel, HotelStatus } from '../types/hotel';
 export type { Hotel };
 
 /** 酒店列表查询参数 */
 export interface HotelListParams {
   page?: number;
-  status?: string;
+  pageSize?: number;
+  status?: HotelStatus;
   keyword?: string;
 }
 

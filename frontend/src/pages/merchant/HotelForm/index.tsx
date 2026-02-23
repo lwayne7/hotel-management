@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Form,
   Input,
@@ -27,7 +27,9 @@ import {
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { hotelApi } from '../../../services/api';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
+import type { Hotel, HotelImage, HotelStatus, RoomType } from '../../../types/hotel';
+import { getApiErrorMessage, isFormValidationError } from '../../../utils/error';
 import './index.css';
 
 const { Title } = Typography;
@@ -45,6 +47,12 @@ const facilityOptions = [
   '会议室', 'SPA', '儿童乐园', '24小时前台', '行李寄存', '洗衣服务',
 ];
 
+type HotelFormValues = Omit<Partial<Hotel>, 'openingDate' | 'roomTypes' | 'images'> & {
+  openingDate?: Dayjs;
+  roomTypes?: Array<Partial<RoomType>>;
+  images?: Array<Partial<HotelImage>>;
+};
+
 const HotelForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -52,17 +60,11 @@ const HotelForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [rejectReason, setRejectReason] = useState<string | null>(null);
-  const [hotelStatus, setHotelStatus] = useState<string | null>(null);
+  const [hotelStatus, setHotelStatus] = useState<HotelStatus | null>(null);
 
   const isEdit = !!id;
 
-  useEffect(() => {
-    if (id) {
-      loadHotel(parseInt(id));
-    }
-  }, [id]);
-
-  const loadHotel = async (hotelId: number) => {
+  const loadHotel = useCallback(async (hotelId: number) => {
     try {
       setIsReadOnly(false);
       setRejectReason(null);
@@ -85,40 +87,64 @@ const HotelForm: React.FC = () => {
         transportation: hotel.transportation || [],
         roomTypes: hotel.roomTypes || [],
       });
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '加载酒店信息失败');
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '加载酒店信息失败'));
     }
-  };
+  }, [form]);
+
+  useEffect(() => {
+    if (!id) return;
+    void loadHotel(parseInt(id, 10));
+  }, [id, loadHotel]);
 
   const handleSave = async (isDraft = true) => {
     try {
-      const values = await form.validateFields();
+      const values = (await form.validateFields()) as HotelFormValues;
       setSubmitting(true);
+      const { openingDate, roomTypes, images, ...restValues } = values;
 
       // 清理房型数据中的 null/undefined 值，避免后端验证失败
-      const cleanedRoomTypes = (values.roomTypes || []).map((rt: any) => ({
-        ...rt,
-        price: rt.price ?? 0,
+      const cleanedRoomTypes: RoomType[] = (roomTypes || []).map((rt, index) => ({
+        id: rt.id,
+        name: rt.name || `房型${index + 1}`,
+        price: Number(rt.price ?? 0),
         originalPrice: rt.originalPrice != null ? Number(rt.originalPrice) : undefined,
+        discountType: rt.discountType || 'none',
         discountValue: rt.discountValue != null ? Number(rt.discountValue) : undefined,
-        maxGuests: rt.maxGuests ?? 2,
+        discountDescription: rt.discountDescription,
+        maxGuests: Number(rt.maxGuests ?? 2),
+        bedType: rt.bedType,
         roomSize: rt.roomSize != null ? Number(rt.roomSize) : undefined,
+        amenities: rt.amenities,
+        imageUrl: rt.imageUrl,
+        description: rt.description,
       }));
 
-      const data = {
-        ...values,
-        openingDate: values.openingDate?.format('YYYY-MM-DD'),
+      const cleanedImages: HotelImage[] | undefined = images
+        ?.map((img, index) => ({
+          id: img.id,
+          imageUrl: (img.imageUrl || '').trim(),
+          sortOrder: img.sortOrder ?? index,
+          description: img.description,
+        }))
+        .filter((img) => img.imageUrl);
+
+      const data: Partial<Hotel> = {
+        ...restValues,
+        openingDate: openingDate?.format('YYYY-MM-DD'),
         roomTypes: cleanedRoomTypes,
+        images: cleanedImages,
       };
 
-      if (isEdit) {
-        await hotelApi.updateHotel(parseInt(id!), data);
+      if (isEdit && id) {
+        const hotelId = parseInt(id, 10);
+        await hotelApi.updateHotel(hotelId, data);
 
         if (!isDraft) {
           // 已发布/已下线酒店：update 已自动将状态改为 pending，无需再调 submitForReview
           // 草稿/已驳回酒店：update 不改状态，需显式调 submitForReview
           if (hotelStatus === 'draft' || hotelStatus === 'rejected') {
-            await hotelApi.submitForReview(parseInt(id!));
+            await hotelApi.submitForReview(hotelId);
           }
           message.success('已提交审核');
           navigate('/merchant/hotels');
@@ -127,7 +153,7 @@ const HotelForm: React.FC = () => {
 
         message.success('保存成功');
         // 保存后实时更新：重新拉取最新数据回填表单
-        const updated = await hotelApi.getHotelById(parseInt(id!));
+        const updated = await hotelApi.getHotelById(hotelId);
         setHotelStatus(updated.status);
         if (updated.status === 'pending') {
           setIsReadOnly(true);
@@ -149,11 +175,11 @@ const HotelForm: React.FC = () => {
         }
         navigate('/merchant/hotels');
       }
-    } catch (error: any) {
-      if (error.errorFields) {
+    } catch (error: unknown) {
+      if (isFormValidationError(error)) {
         message.error('请检查表单填写是否完整');
       } else {
-        message.error(error.response?.data?.message || '操作失败');
+        message.error(getApiErrorMessage(error, '操作失败'));
       }
     } finally {
       setSubmitting(false);

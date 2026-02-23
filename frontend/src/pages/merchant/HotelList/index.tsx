@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Table,
   Button,
@@ -11,6 +11,7 @@ import {
   Popconfirm,
   Tooltip,
 } from 'antd';
+import type { TableProps, TabsProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -24,10 +25,13 @@ import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { fetchMyHotels } from '../../../store/slices/hotelSlice';
 import type { Hotel, HotelStatus } from '../../../store/slices/hotelSlice';
 import { hotelApi } from '../../../services/api';
+import { getApiErrorMessage } from '../../../utils/error';
 import dayjs from 'dayjs';
 import './index.css';
 
 const { Title } = Typography;
+
+type MerchantFilterStatus = 'all' | HotelStatus;
 
 const statusConfig: Record<HotelStatus, { color: string; text: string }> = {
   draft: { color: 'default', text: '草稿' },
@@ -41,31 +45,35 @@ const MerchantHotels: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { hotels, isLoading, pagination } = useAppSelector((state) => state.hotel);
-  const [activeStatus, setActiveStatus] = useState<string>('all');
+  const [activeStatus, setActiveStatus] = useState<MerchantFilterStatus>('all');
   const [searchText, setSearchText] = useState('');
+
+  const loadHotels = useCallback(
+    (page = 1) => {
+      const params: { page?: number; status?: HotelStatus; keyword?: string } = { page };
+      if (activeStatus !== 'all') {
+        params.status = activeStatus;
+      }
+      const keyword = searchText.trim();
+      if (keyword) {
+        params.keyword = keyword;
+      }
+      void dispatch(fetchMyHotels(params));
+    },
+    [activeStatus, dispatch, searchText],
+  );
 
   useEffect(() => {
     loadHotels(1);
-  }, [activeStatus]);
-
-  const loadHotels = (page = 1) => {
-    const params: any = { page };
-    if (activeStatus !== 'all') {
-      params.status = activeStatus;
-    }
-    if (searchText.trim()) {
-      params.keyword = searchText.trim();
-    }
-    dispatch(fetchMyHotels(params));
-  };
+  }, [loadHotels]);
 
   const handleDelete = async (id: number) => {
     try {
       await hotelApi.deleteHotel(id);
       message.success('删除成功');
       loadHotels(pagination.page);
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '删除失败');
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '删除失败'));
     }
   };
 
@@ -74,12 +82,12 @@ const MerchantHotels: React.FC = () => {
       await hotelApi.submitForReview(id);
       message.success('提交审核成功');
       loadHotels(pagination.page);
-    } catch (error: any) {
-      message.error(error.response?.data?.message || '提交失败');
+    } catch (error: unknown) {
+      message.error(getApiErrorMessage(error, '提交失败'));
     }
   };
 
-  const columns = [
+  const columns: TableProps<Hotel>['columns'] = [
     {
       title: '酒店名称',
       dataIndex: 'nameCn',
@@ -110,7 +118,7 @@ const MerchantHotels: React.FC = () => {
       title: '房型数',
       key: 'roomCount',
       width: 80,
-      render: (_: any, record: Hotel) => record.roomTypes?.length || 0,
+      render: (_: unknown, record: Hotel) => record.roomTypes?.length || 0,
     },
     {
       title: '状态',
@@ -148,9 +156,8 @@ const MerchantHotels: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 240,
-      render: (_: any, record: Hotel) => (
+      render: (_: unknown, record: Hotel) => (
         <Space size="small">
-          {/* 草稿/驳回/已发布/已下线 均可编辑 */}
           {['draft', 'rejected', 'approved', 'offline'].includes(record.status) && (
             <Button
               type="link"
@@ -161,7 +168,6 @@ const MerchantHotels: React.FC = () => {
               编辑
             </Button>
           )}
-          {/* 草稿/驳回 可提交审核 */}
           {['draft', 'rejected'].includes(record.status) && (
             <Button
               type="link"
@@ -172,7 +178,6 @@ const MerchantHotels: React.FC = () => {
               提交审核
             </Button>
           )}
-          {/* 仅草稿可删除 */}
           {record.status === 'draft' && (
             <Popconfirm
               title="确定删除此酒店？"
@@ -185,7 +190,6 @@ const MerchantHotels: React.FC = () => {
               </Button>
             </Popconfirm>
           )}
-          {/* 待审核状态只能查看 */}
           {record.status === 'pending' && (
             <Button
               type="link"
@@ -200,7 +204,7 @@ const MerchantHotels: React.FC = () => {
     },
   ];
 
-  const tabItems = [
+  const tabItems: TabsProps['items'] = [
     { key: 'all', label: '全部' },
     { key: 'draft', label: '草稿' },
     { key: 'pending', label: '审核中' },
@@ -208,9 +212,6 @@ const MerchantHotels: React.FC = () => {
     { key: 'rejected', label: '已驳回' },
     { key: 'offline', label: '已下线' },
   ];
-
-  // 搜索已通过服务端 keyword 参数过滤，无需客户端再过滤
-  const filteredHotels = hotels;
 
   return (
     <div className="merchant-hotels">
@@ -229,7 +230,7 @@ const MerchantHotels: React.FC = () => {
         <Tabs
           activeKey={activeStatus}
           onChange={(key) => {
-            setActiveStatus(key);
+            setActiveStatus(key as MerchantFilterStatus);
           }}
           items={tabItems}
         />
@@ -247,7 +248,7 @@ const MerchantHotels: React.FC = () => {
 
       <Table
         columns={columns}
-        dataSource={filteredHotels}
+        dataSource={hotels}
         rowKey="id"
         loading={isLoading}
         pagination={{
