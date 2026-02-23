@@ -74,6 +74,17 @@
 
 ---
 
+### 6️⃣ 答辩资料（defense）
+**适合**：结营答辩与演示准备  
+**文件**：
+- [需求-实现-证据矩阵](./defense/requirement-matrix.md)
+- [PPT 大纲](./defense/slide-outline.md)
+- [演示脚本](./defense/demo-script.md)
+- [高频问答](./defense/qa-playbook.md)
+- [评分自检](./defense/score-selfcheck.md)
+
+---
+
 ## 🎯 学习路径推荐
 
 ### 路径 A：快速上手（适合赶时间的人）

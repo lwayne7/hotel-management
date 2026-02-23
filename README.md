@@ -174,7 +174,7 @@ http://localhost:3000/api/docs
 |------|------|------|
 | GET | /api/hotels | 获取我的酒店列表 |
 | POST | /api/hotels | 创建酒店 |
-| PUT | /api/hotels/:id | 更新酒店 |
+| PATCH | /api/hotels/:id | 更新酒店 |
 | DELETE | /api/hotels/:id | 删除酒店 |
 | POST | /api/hotels/:id/submit | 提交审核 |
 
