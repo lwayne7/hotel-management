@@ -16,8 +16,9 @@ interface Notification {
 
 const { Text } = Typography;
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const WS_URL = API_BASE.replace('/api', '');
+const WS_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+  : (import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin);
 
 const NotificationBell: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
