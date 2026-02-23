@@ -16,22 +16,44 @@ export { Hotel, HotelStatus, RoomType, HotelImage, User };
 const backendRoot = path.resolve(__dirname, '../../..');
 
 /**
+ * 解析 DATABASE_URL 环境变量
+ */
+function parseDatabaseUrl(url: string) {
+    const parsed = new URL(url);
+    return {
+        host: parsed.hostname,
+        port: parseInt(parsed.port || '5432', 10),
+        username: decodeURIComponent(parsed.username),
+        password: decodeURIComponent(parsed.password),
+        database: parsed.pathname.replace(/^\//, ''),
+    };
+}
+
+/**
  * 获取数据库连接配置
  */
 export function getDatabaseConfig(): DataSourceOptions {
-    const dbType = process.env.DB_TYPE || 'sqlite';
+    const databaseUrl = process.env.DATABASE_URL;
+    const dbType = databaseUrl ? 'postgres' : (process.env.DB_TYPE || 'sqlite');
 
     if (dbType === 'postgres') {
+        const conn = databaseUrl
+            ? parseDatabaseUrl(databaseUrl)
+            : {
+                host: process.env.DB_HOST || 'localhost',
+                port: parseInt(process.env.DB_PORT || '5432', 10),
+                username: process.env.DB_USERNAME || 'postgres',
+                password: process.env.DB_PASSWORD || 'postgres',
+                database: process.env.DB_DATABASE || 'hotel_management',
+            };
+        const isRemote = conn.host !== 'localhost' && conn.host !== '127.0.0.1';
         return {
             type: 'postgres',
-            host: process.env.DB_HOST || 'localhost',
-            port: parseInt(process.env.DB_PORT || '5432', 10),
-            username: process.env.DB_USERNAME || 'postgres',
-            password: process.env.DB_PASSWORD || 'postgres',
-            database: process.env.DB_DATABASE || 'hotel_management',
+            ...conn,
             entities: [User, Hotel, RoomType, HotelImage],
             synchronize: false,
             logging: false,
+            ...(isRemote ? { ssl: { rejectUnauthorized: false } } : {}),
         } as DataSourceOptions;
     }
 
@@ -59,11 +81,17 @@ export async function createDataSource(): Promise<DataSource> {
  * 打印数据库连接信息
  */
 export function logDatabaseInfo(): void {
-    const dbType = process.env.DB_TYPE || 'sqlite';
+    const databaseUrl = process.env.DATABASE_URL;
+    const dbType = databaseUrl ? 'postgres' : (process.env.DB_TYPE || 'sqlite');
     console.log(`📂 数据库类型: ${dbType}`);
 
     if (dbType === 'postgres') {
-        console.log(`📍 PostgreSQL: ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`);
+        if (databaseUrl) {
+            const conn = parseDatabaseUrl(databaseUrl);
+            console.log(`📍 PostgreSQL: ${conn.host}:${conn.port}/${conn.database}`);
+        } else {
+            console.log(`📍 PostgreSQL: ${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`);
+        }
     } else {
         console.log(`📍 SQLite: ${process.env.DB_DATABASE || 'hotel_management.sqlite'}`);
     }
