@@ -1,197 +1,110 @@
-# 易宿酒店预订平台
+# 🏨 易宿酒店预订平台 — 管理系统
 
-智慧出行酒店预订平台，面向商户与终端用户：**用户端**为移动端预定流程（查询/列表/详情），**管理端**为 PC 端酒店信息管理与审核。
+> 面向商户与平台管理员的酒店信息管理、审核、发布一站式系统。  
+> **前端** React 19 + Ant Design 6 · **后端** NestJS 11 + TypeORM · **实时通信** WebSocket + SSE
 
-## 📋 项目简介
+---
 
-本项目分为两部分，与「第五期前端训练营大作业」要求对齐：
+## ✨ 项目亮点
 
-- **用户端预定流程（移动端）**：
-  - Vite H5 版：[hotel-mobile](../hotel-mobile)，基于 React 19 + Vite 7 + Ant Design 6
-  - Taro 多端版：[hotel-mobile-taro](../hotel-mobile-taro)，支持 H5 / 微信小程序 / React Native APP
-  - 酒店查询页（首页）、酒店列表页（上滑加载）、酒店详情页、收藏夹
-- **管理酒店信息系统（PC 站点）**
-  - 用户登录/注册（商户、管理员角色；注册可选角色，登录自动判断）
-  - 酒店信息录入/编辑/修改（商户）；保存后实时更新到端侧
-  - 酒店信息审核/发布/下线（管理员）；审核状态通过/不通过/审核中，不通过显示原因；下线可恢复
+| 亮点 | 说明 |
+|------|------|
+| 🔄 **完整审核工作流** | DRAFT → PENDING → APPROVED / REJECTED → OFFLINE，覆盖酒店全生命周期 |
+| 📡 **WebSocket 实时通知** | 基于 Socket.IO，商户提交/管理员审核操作秒级推送，按角色精准投递 |
+| 📈 **SSE 价格流** | RxJS Subject + interval 合并流，30s keepalive，客户端零丢失 |
+| 🔐 **JWT + RBAC** | Passport.js 认证、RolesGuard 鉴权、bcrypt 密码哈希，商户/管理员双角色隔离 |
+| 🗂️ **万级种子数据** | 一键生成 10 000 家酒店 × 50 城市 × 5 星级 × 150+ 张 Unsplash 高质量图片 |
+| 📝 **Swagger 文档** | 自动生成 OpenAPI 文档，开箱即用 |
+| 🎨 **企业级 UI** | Ant Design 6 定制主题、深色侧边栏、响应式布局、ErrorBoundary 兜底 |
 
-## 🛠 技术栈
+---
+
+## 🛠️ 技术栈
 
 ### 前端
-- ⚛️ **React 19** - 现代化 UI 框架
-- 📘 **TypeScript 5.9** - 类型安全
-- ⚡ **Vite 7** - 快速构建工具
-- 🎨 **Ant Design 6** - 企业级 UI 组件库
-- 🔄 **Redux Toolkit** - 状态管理
-- 🛣️ **React Router 7** - 路由管理
-- 📡 **Axios** - HTTP 客户端
+- ⚛️ **React 19** + **TypeScript 5.9** — 类型安全的现代化 UI
+- ⚡ **Vite 7** — 毫秒级 HMR
+- 🎨 **Ant Design 6** — 定制 Token 主题（圆角 12px / PingFang SC 字体 / 蓝色主色调）
+- 🔄 **Redux Toolkit** — 全局状态管理（auth / hotels / notifications slices）
+- 🛣️ **React Router 7** — 嵌套路由 + AuthRoute 守卫
+- 🔔 **Socket.IO Client** — 实时接收审核通知（NotificationBell 组件）
 
 ### 后端
-- 🦅 **NestJS 11** - 企业级 Node.js 框架
-- 📘 **TypeScript 5** - 类型安全
-- 🗃️ **TypeORM 0.3** - ORM 框架
-- 🐘 **PostgreSQL / SQLite** - 关系型数据库
-- 🔐 **Passport + JWT** - 身份认证
-- 📝 **Swagger** - API 文档
+- 🦅 **NestJS 11** — 模块化企业级框架
+- 🗃️ **TypeORM 0.3** — 实体关联 + 级联加载（Hotel → RoomType → HotelImage）
+- 🐘 **PostgreSQL**（生产）/ **SQLite**（开发零配置）
+- 🔐 **Passport + JWT** — 认证与授权
+- 📡 **Socket.IO** — WebSocket 网关，按角色/用户房间推送
+- 📈 **RxJS** — 服务端 SSE 价格变更流
+- 📝 **Swagger** — 自动 OpenAPI 文档
+- 🌱 **Seed 系统** — 一键初始化 / 批量生成 / 清空 / 更新图片
+
+---
 
 ## 📁 项目结构
 
 ```
 hotel-management/
-├── frontend/                 # 前端项目
+├── frontend/                 # 前端 — React 19 PC 管理后台
 │   ├── src/
-│   │   ├── components/      # 公共组件
-│   │   ├── pages/           # 页面组件
-│   │   │   ├── auth/        # 认证页面
-│   │   │   ├── merchant/    # 商户页面
-│   │   │   └── admin/       # 管理员页面
-│   │   ├── store/           # Redux Store
-│   │   │   └── slices/      # Redux Slices
-│   │   ├── services/        # API 服务
-│   │   ├── router/          # 路由配置
-│   │   └── types/           # 类型定义
+│   │   ├── components/       # AuthRoute / ErrorBoundary / Layout / NotificationBell
+│   │   ├── pages/
+│   │   │   ├── auth/         # 登录 / 注册（可选商户 or 管理员角色）
+│   │   │   ├── merchant/     # 商户：酒店列表 / 编辑 / 提审
+│   │   │   ├── admin/        # 管理员：审核列表 / 通过 / 驳回 / 上下线
+│   │   │   └── Home/         # 数据看板
+│   │   ├── store/slices/     # Redux Slices（auth / hotels / notifications）
+│   │   ├── services/         # Axios API 封装
+│   │   └── router/           # 路由配置 + 角色守卫
 │   └── package.json
-├── backend/                  # 后端项目
+├── backend/                  # 后端 — NestJS 11 API
 │   ├── src/
-│   │   ├── auth/            # 认证模块
-│   │   ├── users/           # 用户模块
-│   │   ├── hotels/          # 酒店模块
-│   │   ├── admin/           # 管理员模块
-│   │   └── config/          # 配置
+│   │   ├── auth/             # Passport + JWT + bcrypt 认证模块
+│   │   ├── users/            # 用户 CRUD
+│   │   ├── hotels/           # 酒店 CRUD + 审核 + SSE 价格流
+│   │   ├── admin/            # 管理员专属接口
+│   │   ├── notifications/    # WebSocket 网关（Socket.IO）
+│   │   ├── seeds/            # 种子数据（10 000 酒店生成器）
+│   │   └── config/           # 数据库 & 环境配置
 │   └── package.json
-└── docs/                     # 项目文档
-    └── REQUIREMENTS.md      # 需求规格说明书
+└── docs/                     # 需求规格说明书
 ```
+
+---
 
 ## 🚀 快速开始
 
 ### 环境要求
 
-- Node.js >= 18
-- PostgreSQL >= 14
-- npm >= 9
+- **Node.js** ≥ 18　·　**npm** ≥ 9
+- **PostgreSQL** ≥ 14（或使用 SQLite 零配置启动）
 
-### 1. 克隆项目
-
-```bash
-git clone https://github.com/lwayne7/hotel-management.git
-cd hotel-management
-```
-
-### 2. 安装 PostgreSQL
-
-#### macOS
-```bash
-brew install postgresql@14
-brew services start postgresql@14
-```
-
-#### Ubuntu/Debian
-```bash
-sudo apt update
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-```
-
-#### Windows
-下载并安装 [PostgreSQL](https://www.postgresql.org/download/windows/)
-
-### 3. 创建数据库
-
-```bash
-# 进入 PostgreSQL
-psql -U postgres
-
-# 创建数据库
-CREATE DATABASE hotel_management;
-
-# 退出
-\q
-```
-
-### 4. 配置后端
+### 1. 启动后端
 
 ```bash
 cd backend
-
-# 安装依赖
 npm install
-
-# 复制环境配置
-cp .env.example .env
-
-# 编辑 .env 文件，配置数据库连接信息
-# DB_HOST=localhost
-# DB_PORT=5432
-# DB_USERNAME=postgres
-# DB_PASSWORD=your_password
-# DB_DATABASE=hotel_management
-# JWT_SECRET=your_jwt_secret
+cp .env.example .env        # 编辑数据库连接等
+npm run seed                 # 初始化测试用户 + 20 家精选酒店
+npm run start:dev            # http://localhost:3000
 ```
 
-### 5. 启动后端
-
-```bash
-cd backend
-npm run start:dev
-
-# 后端服务将运行在 http://localhost:3000
-# Swagger 文档: http://localhost:3000/api/docs
-```
-
-### 6. 启动前端
+### 2. 启动前端
 
 ```bash
 cd frontend
-
-# 安装依赖
 npm install
-
-# 启动开发服务器
-npm run dev
-
-# 前端服务将运行在 http://localhost:5173
+npm run dev                  # http://localhost:5173
 ```
 
-## 📚 API 文档
+### 3. 批量生成万级酒店（可选）
 
-启动后端后，访问 Swagger 文档：
+```bash
+cd backend
+npm run generate-hotels      # 生成 10 000 家酒店
 ```
-http://localhost:3000/api/docs
-```
 
-### 主要接口
-
-#### 认证接口
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| POST | /api/auth/register | 用户注册 |
-| POST | /api/auth/login | 用户登录 |
-| GET | /api/auth/profile | 获取当前用户 |
-
-#### 商户接口
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | /api/hotels | 获取我的酒店列表 |
-| POST | /api/hotels | 创建酒店 |
-| PATCH | /api/hotels/:id | 更新酒店 |
-| DELETE | /api/hotels/:id | 删除酒店 |
-| POST | /api/hotels/:id/submit | 提交审核 |
-
-#### 管理员接口
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | /api/admin/hotels | 获取所有酒店 |
-| POST | /api/admin/hotels/:id/approve | 审核通过 |
-| POST | /api/admin/hotels/:id/reject | 审核驳回 |
-| POST | /api/admin/hotels/:id/offline | 酒店下线 |
-| POST | /api/admin/hotels/:id/online | 酒店上线 |
-
-#### 用户端公开接口（无需登录，仅已发布酒店）
-| 方法 | 路径 | 描述 |
-|------|------|------|
-| GET | /api/public/hotels | 酒店列表（支持 keyword/city/starRating/minPrice/maxPrice） |
-| GET | /api/public/hotels/:id | 酒店详情 |
+---
 
 ## 🔄 酒店状态流转
 
@@ -205,118 +118,30 @@ http://localhost:3000/api/docs
     └─── 已驳回(REJECTED) ◀─── 驳回
 ```
 
-## 👥 用户角色
+---
 
-| 角色 | 描述 | 权限 |
-|------|------|------|
-| 商户 (merchant) | 酒店经营者 | 管理自己的酒店信息 |
-| 管理员 (admin) | 平台运营 | 审核、上下线所有酒店 |
+## 📚 API 概览
 
-## 🔧 开发命令
+> 完整文档：启动后端后访问 **http://localhost:3000/api/docs**
 
-### 后端
-```bash
-# 开发模式
-npm run start:dev
+| 模块 | 方法 | 路径 | 描述 |
+|------|------|------|------|
+| 认证 | POST | `/api/auth/register` | 注册（可选 merchant / admin） |
+| 认证 | POST | `/api/auth/login` | 登录 |
+| 商户 | POST | `/api/hotels` | 创建酒店 |
+| 商户 | PATCH | `/api/hotels/:id` | 编辑酒店 |
+| 商户 | POST | `/api/hotels/:id/submit` | 提交审核 |
+| 管理员 | POST | `/api/admin/hotels/:id/approve` | 审核通过 |
+| 管理员 | POST | `/api/admin/hotels/:id/reject` | 审核驳回 |
+| 管理员 | POST | `/api/admin/hotels/:id/offline` | 下线 |
+| 管理员 | POST | `/api/admin/hotels/:id/online` | 恢复上线 |
+| 公开 | GET | `/api/public/hotels` | 酒店列表（keyword / city / star / price / tags） |
+| 公开 | GET | `/api/public/hotels/:id` | 酒店详情 |
+| 公开 | GET | `/api/public/hotels/price-updates` | SSE 价格变更流 |
 
-# 生产构建
-npm run build
+---
 
-# 运行测试
-npm run test
-
-# 代码格式化
-npm run format
-```
-
-### 前端
-```bash
-# 开发模式
-npm run dev
-
-# 生产构建
-npm run build
-
-# 代码检查
-npm run lint
-
-# 预览构建结果
-npm run preview
-```
-
-## 📝 环境变量
-
-### 后端 (.env)
-```env
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-DB_DATABASE=hotel_management
-
-# JWT 配置
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
-
-# 服务端口
-PORT=3000
-
-# OSS 配置（可选）
-OSS_REGION=oss-cn-hangzhou
-OSS_ACCESS_KEY_ID=your_access_key
-OSS_ACCESS_KEY_SECRET=your_secret
-OSS_BUCKET=your_bucket
-```
-
-## 🌱 种子数据
-
-后端提供完整的种子数据系统（见 `backend/src/seeds/`），支持：
-
-### 初始化基础数据
-```bash
-cd backend
-npm run seed
-```
-创建测试用户和 20 家精选演示酒店。
-
-### 批量生成测试酒店
-```bash
-cd backend
-npm run generate-hotels
-```
-生成 **10000 家酒店**，确保筛选功能测试覆盖完整：
-
-| 维度 | 分布 | 数量 |
-|------|------|------|
-| 亲子酒店 | ~20% | ~2000 家 |
-| 豪华酒店 | ~20% | ~2000 家 |
-| 免费停车场 | ~20% | ~2000 家 |
-| 含早餐 | ~20% | ~2000 家 |
-| 健身房 | ~20% | ~2000 家 |
-| 1-5 星级 | 各 ~20% | 各 ~2000 家 |
-| 覆盖城市 | - | 50 个城市 |
-
-### 清空酒店数据
-```bash
-cd backend
-npm run clear-hotels
-```
-清空所有酒店数据，用于重新导入。
-
-### 更新酒店图片
-```bash
-cd backend
-npm run update-images
-```
-
-### 图片资源
-- **150+ 张精选酒店图片**（Unsplash 高质量）
-- 酒店外观 50 张、大堂 20 张、泳池 15 张
-- 房型图片：大床房 20 张、双床房 15 张、套房 15 张、家庭房 12 张、标间 12 张
-- 使用 `hotelId + cityIndex` 种子算法确保不同酒店图片唯一
-
-### 测试账号
+## 👥 测试账号
 
 | 角色 | 用户名 | 密码 |
 |------|--------|------|
@@ -324,26 +149,52 @@ npm run update-images
 | 商户 | merchant02 | Test123456 |
 | 管理员 | admin01 | Admin123456 |
 
-## 📄 项目文档
+---
 
-- [需求规格说明书](docs/REQUIREMENTS.md) - 详细功能需求文档
+## 🌱 种子数据
 
-## 🤝 贡献指南
+```bash
+npm run seed              # 基础数据：测试用户 + 20 家精选酒店
+npm run generate-hotels   # 批量：10 000 家酒店（50 城市 × 5 星级 × 150+ 图片）
+npm run clear-hotels      # 清空酒店数据
+npm run update-images     # 更新酒店图片
+```
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
-
-## 📜 许可证
-
-本项目仅供学习使用。
-
-## 📧 联系方式
-
-如有问题，请提交 Issue。
+| 维度 | 分布 |
+|------|------|
+| 城市 | 50 个（北京、上海、广州、深圳、杭州、成都、三亚…） |
+| 星级 | 1–5 星各 ~20% |
+| 标签 | 亲子 / 豪华 / 免费停车场 / 含早餐 / 健身房 各 ~20% |
+| 图片 | 150+ 张 Unsplash 精选，hotelId 种子算法确保唯一 |
 
 ---
+
+## 📝 环境变量（后端 `.env`）
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_DATABASE=hotel_management
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=7d
+PORT=3000
+```
+
+---
+
+## 🔗 相关项目
+
+| 项目 | 说明 | 仓库 |
+|------|------|------|
+| **hotel-mobile-taro** | 用户端 — Taro 多端（H5 / 微信小程序 / RN） | [GitHub](https://github.com/lwayne7/hotel-mobile-taro) |
+| **hotel-mobile** | 用户端 — 纯 H5 轻量版（Vite + Ant Design） | [GitHub](https://github.com/lwayne7/hotel-mobile) |
+
+---
+
+## 📄 许可证
+
+本项目仅供学习使用。
 
 ⭐ 如果这个项目对你有帮助，请给一个 Star！
