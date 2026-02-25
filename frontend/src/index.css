@@ -40,27 +40,57 @@ a {
   color: var(--brand-primary);
 }
 
+/* ============ 滚动条美化 ============ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(31, 111, 235, 0.2);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(31, 111, 235, 0.4);
+}
+
+/* ============ 页面容器 ============ */
 .page-shell {
   background: var(--card-bg);
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-soft);
   border-radius: 14px;
-  padding: 16px;
+  padding: 20px;
 }
 
 .page-title {
   margin-bottom: 4px !important;
+  color: var(--text-main);
 }
 
 .page-subtitle {
   color: var(--text-sub);
+  font-size: 13px;
 }
 
+/* ============ Ant Design 全局增强 ============ */
 .ant-card {
-  border: 1px solid var(--border-soft);
-  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border-soft) !important;
+  box-shadow: var(--shadow-soft) !important;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
+.ant-card:hover {
+  box-shadow: 0 12px 32px rgba(22, 44, 80, 0.13) !important;
+}
+
+/* 表格美化 */
 .ant-table-wrapper .ant-table {
   border-radius: 12px !important;
   overflow: hidden;
@@ -68,18 +98,30 @@ a {
 
 .ant-table-wrapper .ant-table-thead > tr > th {
   font-weight: 600;
+  background: #f7faff !important;
+  border-bottom: 2px solid #e4edfb !important;
 }
 
+.ant-table-wrapper .ant-table-tbody > tr {
+  transition: background 0.18s ease;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr:last-child td {
+  border-bottom: none;
+}
+
+/* 表单标签 */
 .ant-form-item-label > label {
   font-weight: 600;
   color: #25324d !important;
 }
 
+/* 输入框焦点效果 */
 .ant-input,
 .ant-input-number,
 .ant-picker,
 .ant-select-selector {
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease !important;
 }
 
 .ant-input:focus,
@@ -88,4 +130,54 @@ a {
 .ant-picker-focused,
 .ant-select-focused .ant-select-selector {
   box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.15) !important;
+}
+
+/* 按钮悬浮效果 */
+.ant-btn {
+  transition: all 0.2s ease !important;
+}
+
+.ant-btn-primary:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(31, 111, 235, 0.28) !important;
+}
+
+/* 胶囊状 Tag */
+.ant-tag {
+  border-radius: 999px !important;
+  padding-inline: 10px !important;
+  font-weight: 500;
+}
+
+/* Modal 美化 */
+.ant-modal-content {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.ant-modal-header {
+  border-bottom: 1px solid #eef2fb !important;
+  padding-bottom: 14px !important;
+}
+
+/* Alert 美化 */
+.ant-alert {
+  border-radius: 10px !important;
+}
+
+/* ============ 加载动画 ============ */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
