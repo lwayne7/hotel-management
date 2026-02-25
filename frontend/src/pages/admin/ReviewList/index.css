@@ -1,24 +1,79 @@
 .admin-review {
-  padding: 18px;
+  padding: 20px;
 }
 
+/* ============ 页面标题区 ============ */
+.admin-review-header {
+  margin-bottom: 16px;
+}
+
+/* ============ Tabs 筛选条 ============ */
 .admin-review .ant-tabs {
   margin-bottom: 16px;
-  padding: 10px 12px;
+  padding: 4px 16px 0;
   border: 1px solid #e8eef9;
-  border-radius: 12px;
+  border-radius: 14px;
   background: linear-gradient(160deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 4px 12px rgba(14, 37, 80, 0.05);
 }
 
-.admin-review-header {
-  margin-bottom: 14px;
+.admin-review .ant-tabs-nav {
+  margin-bottom: 0;
 }
 
-.admin-review .ant-tag {
-  border-radius: 999px;
-  padding-inline: 8px;
+.admin-review .ant-tabs-tab {
+  font-weight: 500;
 }
 
+.admin-review .ant-tabs-tab-active .ant-tabs-tab-btn {
+  font-weight: 700;
+}
+
+/* ============ 表格行悬浮高亮 ============ */
 .admin-review .pretty-table .ant-table-row:hover > td {
-  background: #f7fbff !important;
+  background: #f4f9ff !important;
+}
+
+.admin-review .pretty-table .ant-table-tbody > tr > td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+/* ============ 审核操作按钮增强 ============ */
+.admin-review .ant-btn-link {
+  padding: 2px 8px;
+  height: auto;
+  font-size: 13px;
+  border-radius: 6px;
+  transition: background 0.18s ease;
+}
+
+.admin-review .ant-btn-link:not(.ant-btn-dangerous):not([style*="color: rgb(82, 196, 26)"]):hover {
+  background: rgba(31, 111, 235, 0.07);
+}
+
+/* 通过按钮 hover */
+.admin-review .ant-btn-link[style*="color: rgb(82, 196, 26)"]:hover,
+.admin-review .ant-btn-link[style*="color:#52c41a"]:hover {
+  background: rgba(26, 155, 125, 0.08) !important;
+}
+
+/* 驳回按钮 hover */
+.admin-review .ant-btn-link.ant-btn-dangerous:hover {
+  background: rgba(216, 79, 95, 0.08);
+}
+
+/* ============ 详情 Modal 图片卡片 ============ */
+.admin-review .ant-modal-content .ant-image img {
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.admin-review .ant-modal-content .ant-image img:hover {
+  transform: scale(1.02);
+}
+
+/* ============ 驳回原因 Modal TextArea ============ */
+.admin-review .ant-modal-content textarea {
+  border-radius: 10px;
 }
