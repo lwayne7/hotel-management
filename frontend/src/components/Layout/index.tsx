@@ -104,7 +104,10 @@ const MainLayout: React.FC = () => {
     <Layout className="main-layout">
       <Sider trigger={null} collapsible collapsed={collapsed} theme="light">
         <div className="logo">
-          {collapsed ? '易宿' : '易宿酒店管理'}
+          {collapsed
+            ? <span className="logo-text-short">易宿</span>
+            : <span className="logo-text-full">易宿酒店管理</span>
+          }
         </div>
         <Menu
           theme="light"
