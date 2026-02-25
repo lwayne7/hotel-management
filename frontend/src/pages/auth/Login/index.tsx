@@ -53,7 +53,11 @@ const Login: React.FC = () => {
     <div className="auth-container">
       <Card className="auth-card">
         <div className="auth-header">
+          <div className="auth-brand">
+            <div className="auth-brand-icon">🏨</div>
+          </div>
           <Title level={2}>易宿酒店管理</Title>
+          <div className="auth-divider" />
           <Text type="secondary">欢迎回来，请登录您的账户</Text>
         </div>
         <Form
