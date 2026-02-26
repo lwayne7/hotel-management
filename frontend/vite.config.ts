@@ -7,6 +7,25 @@ const API_TARGET = process.env.VITE_API_TARGET || 'https://hotel-management-prod
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    chunkSizeWarningLimit: 1100,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@ant-design/icons')) return 'vendor-antd-icons';
+            if (id.includes('antd/es/locale') || id.includes('antd/locale')) return 'vendor-antd-locale';
+            if (id.includes('antd')) return 'vendor-antd-core';
+            if (id.includes('react-dom')) return 'vendor-react-dom';
+            if (id.includes('react-router')) return 'vendor-react-router';
+            if (id.includes('react')) return 'vendor-react';
+            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) return 'vendor-state';
+            if (id.includes('axios') || id.includes('dayjs') || id.includes('socket.io')) return 'vendor-utils';
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api': {
