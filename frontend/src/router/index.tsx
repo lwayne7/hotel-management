@@ -3,8 +3,7 @@ import { lazy, Suspense, type ReactNode } from 'react';
 import { Spin } from 'antd';
 import MainLayout from '../components/Layout';
 import AuthRoute from '../components/AuthRoute';
-
-const Login = lazy(() => import('../pages/auth/Login'));
+import Login from '../pages/auth/Login';
 const Register = lazy(() => import('../pages/auth/Register'));
 const Home = lazy(() => import('../pages/Home'));
 const MerchantHotels = lazy(() => import('../pages/merchant/HotelList'));
@@ -26,7 +25,7 @@ const withSuspense = (children: ReactNode) => (
 const router = createBrowserRouter([
   {
     path: '/login',
-    element: withSuspense(<Login />),
+    element: <Login />,
   },
   {
     path: '/register',
