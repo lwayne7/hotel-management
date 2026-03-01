@@ -4,10 +4,11 @@ import { NotificationsGateway } from './notifications.gateway';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationEntity } from './notification.entity';
+import { User } from '../users/entities/user.entity';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([NotificationEntity])],
+  imports: [TypeOrmModule.forFeature([NotificationEntity, User])],
   controllers: [NotificationsController],
   providers: [NotificationsGateway, NotificationsService],
   exports: [NotificationsGateway, NotificationsService],

@@ -7,6 +7,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
+import { UserRole } from '../users/entities/user.entity';
 
 export interface NotificationPayload {
   type: 'hotel_submitted' | 'hotel_approved' | 'hotel_rejected' | 'hotel_offline' | 'hotel_online';
@@ -63,6 +64,14 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.server.emit('notification', payload);
     } else if (payload.targetRole) {
       this.server.to(`role:${payload.targetRole}`).emit('notification', payload);
+      // 按角色持久化：为该角色下每位用户各存一条
+      void this.notificationsService.saveForRole(payload.targetRole as UserRole, {
+        type: payload.type,
+        hotelId: payload.hotelId,
+        hotelName: payload.hotelName,
+        message: payload.message,
+        timestamp: payload.timestamp,
+      });
     }
   }
 }
