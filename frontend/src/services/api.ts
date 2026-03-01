@@ -119,4 +119,21 @@ export const hotelApi = {
     api.get('/admin/statistics'),
 };
 
+// 通知相关
+export interface NotificationItem {
+  id: number;
+  type: string;
+  hotelId: number;
+  hotelName: string;
+  message: string;
+  timestamp: number;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export const notificationApi = {
+  getUnread: (): Promise<NotificationItem[]> => api.get('/notifications/mine'),
+  markAllRead: (): Promise<{ success: boolean }> => api.patch('/notifications/read-all'),
+};
+
 export default api;

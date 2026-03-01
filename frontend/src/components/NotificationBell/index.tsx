@@ -1,12 +1,14 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Badge, Popover, List, Typography, Empty, Button } from 'antd';
 import { BellOutlined } from '@ant-design/icons';
 import { io, Socket } from 'socket.io-client';
 import { useAppSelector } from '../../store/hooks';
+import { notificationApi } from '../../services/api';
 import dayjs from 'dayjs';
 import './index.css';
 
-interface Notification {
+interface DisplayNotification {
+  id?: number;
   type: string;
   hotelId: number;
   hotelName: string;
@@ -22,10 +24,35 @@ const WS_URL = import.meta.env.VITE_API_URL
 
 const NotificationBell: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<DisplayNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const socketRef = useRef<Socket | null>(null);
 
+  // 登录后从数据库拉取历史未读通知
+  const fetchUnread = useCallback(async () => {
+    if (!user) return;
+    try {
+      const items = await notificationApi.getUnread();
+      const mapped: DisplayNotification[] = items.map((n) => ({
+        id: n.id,
+        type: n.type,
+        hotelId: n.hotelId,
+        hotelName: n.hotelName,
+        message: n.message,
+        timestamp: n.timestamp,
+      }));
+      setNotifications(mapped);
+      setUnread(mapped.length);
+    } catch {
+      // 静默失败，不影响主功能
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void fetchUnread();
+  }, [fetchUnread]);
+
+  // WebSocket 实时推送
   useEffect(() => {
     if (!user) return;
     const socket = io(`${WS_URL}/notifications`, {
@@ -34,8 +61,8 @@ const NotificationBell: React.FC = () => {
     });
     socketRef.current = socket;
 
-    socket.on('notification', (data: Notification) => {
-      setNotifications((prev) => [data, ...prev].slice(0, 20));
+    socket.on('notification', (data: DisplayNotification) => {
+      setNotifications((prev) => [data, ...prev].slice(0, 50));
       setUnread((c) => c + 1);
     });
 
@@ -45,7 +72,11 @@ const NotificationBell: React.FC = () => {
   }, [user]);
 
   const handleOpen = (open: boolean) => {
-    if (open) setUnread(0);
+    if (open && unread > 0) {
+      setUnread(0);
+      // 异步标记数据库中所有通知为已读
+      void notificationApi.markAllRead().catch(() => {});
+    }
   };
 
   const content = (

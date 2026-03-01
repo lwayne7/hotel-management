@@ -6,6 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
+import { NotificationsService } from './notifications.service';
 
 export interface NotificationPayload {
   type: 'hotel_submitted' | 'hotel_approved' | 'hotel_rejected' | 'hotel_offline' | 'hotel_online';
@@ -13,7 +14,10 @@ export interface NotificationPayload {
   hotelName: string;
   message: string;
   timestamp: number;
-  targetRole: 'merchant' | 'admin' | 'all';
+  /** 精准推送给指定用户（同时持久化到数据库） */
+  targetUserId?: number;
+  /** 广播给整个角色组（不持久化） */
+  targetRole?: 'merchant' | 'admin' | 'all';
 }
 
 @WebSocketGateway({
@@ -26,6 +30,8 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   server: Server;
 
   private connectedClients = new Map<string, { role?: string; userId?: number }>();
+
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   handleConnection(client: Socket) {
     const role = client.handshake.query.role as string;
@@ -41,11 +47,21 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     console.log(`[WS] Client disconnected: ${client.id}`);
   }
 
-  /** Send a notification to a specific role or all connected clients */
   sendNotification(payload: NotificationPayload) {
-    if (payload.targetRole === 'all') {
+    if (payload.targetUserId) {
+      // 精准推送：只发给指定用户，并持久化到数据库
+      this.server.to(`user:${payload.targetUserId}`).emit('notification', payload);
+      void this.notificationsService.save({
+        type: payload.type,
+        hotelId: payload.hotelId,
+        hotelName: payload.hotelName,
+        message: payload.message,
+        targetUserId: payload.targetUserId,
+        timestamp: payload.timestamp,
+      });
+    } else if (payload.targetRole === 'all') {
       this.server.emit('notification', payload);
-    } else {
+    } else if (payload.targetRole) {
       this.server.to(`role:${payload.targetRole}`).emit('notification', payload);
     }
   }

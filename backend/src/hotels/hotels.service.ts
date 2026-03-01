@@ -382,7 +382,7 @@ export class HotelsService {
       hotelName: saved.nameCn,
       message: `您的酒店「${saved.nameCn}」已通过审核并发布`,
       timestamp: Date.now(),
-      targetRole: 'merchant',
+      targetUserId: saved.merchantId,
     });
     this.priceUpdatesService.emit('hotel_online', saved.id);
     return this.normalizeHotel(saved);
@@ -405,7 +405,7 @@ export class HotelsService {
       hotelName: saved.nameCn,
       message: `您的酒店「${saved.nameCn}」审核未通过：${reason}`,
       timestamp: Date.now(),
-      targetRole: 'merchant',
+      targetUserId: saved.merchantId,
     });
     return this.normalizeHotel(saved);
   }
@@ -427,7 +427,7 @@ export class HotelsService {
       hotelName: saved.nameCn,
       message: `您的酒店「${saved.nameCn}」已被下线`,
       timestamp: Date.now(),
-      targetRole: 'merchant',
+      targetUserId: saved.merchantId,
     });
     return this.normalizeHotel(saved);
   }
@@ -449,7 +449,7 @@ export class HotelsService {
       hotelName: saved.nameCn,
       message: `您的酒店「${saved.nameCn}」已恢复上线`,
       timestamp: Date.now(),
-      targetRole: 'merchant',
+      targetUserId: saved.merchantId,
     });
     return this.normalizeHotel(saved);
   }
