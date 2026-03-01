@@ -228,6 +228,18 @@ export class HotelsService {
     }
     await this.hotelsRepository.save(hotel);
 
+    // 已发布/已下线酒店编辑后状态自动变为 pending，需通知管理员
+    if (needsReReview) {
+      this.notificationsGateway.sendNotification({
+        type: 'hotel_submitted',
+        hotelId: hotel.id,
+        hotelName: hotel.nameCn,
+        message: `商户重新提交了酒店「${hotel.nameCn}」的审核申请（编辑后重审）`,
+        timestamp: Date.now(),
+        targetRole: 'admin',
+      });
+    }
+
     // 更新房型（删除旧的，创建新的）
     if (roomTypes !== undefined) {
       await this.roomTypesRepository.delete({ hotelId: id });
