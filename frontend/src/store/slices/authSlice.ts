@@ -20,7 +20,7 @@ interface AuthState {
 }
 
 function parseStoredUser(): User | null {
-  const raw = localStorage.getItem('user');
+  const raw = sessionStorage.getItem('user');
   if (!raw) return null;
   try {
     return JSON.parse(raw) as User;
@@ -31,7 +31,7 @@ function parseStoredUser(): User | null {
 
 const initialState: AuthState = {
   user: parseStoredUser(),
-  token: localStorage.getItem('token'),
+  token: sessionStorage.getItem('token'),
   isLoading: false,
   error: null,
 };
@@ -41,8 +41,8 @@ export const login = createAsyncThunk<AuthResponse, LoginParams, { rejectValue: 
   async (params, { rejectWithValue }) => {
     try {
       const response = await authApi.login(params);
-      localStorage.setItem('token', response.access_token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      sessionStorage.setItem('token', response.access_token);
+      sessionStorage.setItem('user', JSON.stringify(response.user));
       return response;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error, '登录失败'));
@@ -55,8 +55,8 @@ export const register = createAsyncThunk<AuthResponse, RegisterParams, { rejectV
   async (params, { rejectWithValue }) => {
     try {
       const response = await authApi.register(params);
-      localStorage.setItem('token', response.access_token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      sessionStorage.setItem('token', response.access_token);
+      sessionStorage.setItem('user', JSON.stringify(response.user));
       return response;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error, '注册失败'));
@@ -72,8 +72,8 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
     },
     clearError: (state) => {
       state.error = null;

@@ -13,7 +13,7 @@ const api = axios.create({
 // 请求拦截器：添加 Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,8 +35,8 @@ api.interceptors.response.use(
 
     // 登录/注册失败时不要强制跳转，否则看不到错误提示
     if (status === 401 && !isLoginOrRegister) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
