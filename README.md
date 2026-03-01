@@ -53,7 +53,7 @@ hotel-management/
 │   │   │   ├── merchant/     # 商户：酒店列表 / 编辑 / 提审
 │   │   │   ├── admin/        # 管理员：审核列表 / 通过 / 驳回 / 上下线
 │   │   │   └── Home/         # 数据看板
-│   │   ├── store/slices/     # Redux Slices（auth / hotels / notifications）
+│   │   ├── store/slices/     # Redux Slices（auth / hotels）
 │   │   ├── services/         # Axios API 封装
 │   │   └── router/           # 路由配置 + 角色守卫
 │   └── package.json
@@ -63,7 +63,7 @@ hotel-management/
 │   │   ├── users/            # 用户 CRUD
 │   │   ├── hotels/           # 酒店 CRUD + 审核 + SSE 价格流
 │   │   ├── admin/            # 管理员专属接口
-│   │   ├── notifications/    # WebSocket 网关（Socket.IO）
+│   │   ├── notifications/    # WebSocket 网关 + 通知持久化（Socket.IO + TypeORM）
 │   │   ├── seeds/            # 种子数据（10 000 酒店生成器）
 │   │   └── config/           # 数据库 & 环境配置
 │   └── package.json
@@ -135,6 +135,8 @@ npm run generate-hotels      # 生成 10 000 家酒店
 | 管理员 | POST | `/api/admin/hotels/:id/reject` | 审核驳回 |
 | 管理员 | POST | `/api/admin/hotels/:id/offline` | 下线 |
 | 管理员 | POST | `/api/admin/hotels/:id/online` | 恢复上线 |
+| 通知 | GET | `/api/notifications/mine` | 获取当前用户未读通知 |
+| 通知 | PATCH | `/api/notifications/read-all` | 标记所有通知为已读 |
 | 公开 | GET | `/api/public/hotels` | 酒店列表（keyword / city / star / price / tags） |
 | 公开 | GET | `/api/public/hotels/:id` | 酒店详情 |
 | 公开 | GET | `/api/public/hotels/price-updates` | SSE 价格变更流 |
