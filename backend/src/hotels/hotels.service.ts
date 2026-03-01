@@ -409,6 +409,14 @@ export class HotelsService {
     hotel.status = HotelStatus.OFFLINE;
     const saved = await this.hotelsRepository.save(hotel);
     this.priceUpdatesService.emit('hotel_offline', saved.id);
+    this.notificationsGateway.sendNotification({
+      type: 'hotel_offline',
+      hotelId: saved.id,
+      hotelName: saved.nameCn,
+      message: `您的酒店「${saved.nameCn}」已被下线`,
+      timestamp: Date.now(),
+      targetRole: 'merchant',
+    });
     return this.normalizeHotel(saved);
   }
 
@@ -423,6 +431,14 @@ export class HotelsService {
     hotel.status = HotelStatus.APPROVED;
     const saved = await this.hotelsRepository.save(hotel);
     this.priceUpdatesService.emit('hotel_online', saved.id);
+    this.notificationsGateway.sendNotification({
+      type: 'hotel_online',
+      hotelId: saved.id,
+      hotelName: saved.nameCn,
+      message: `您的酒店「${saved.nameCn}」已恢复上线`,
+      timestamp: Date.now(),
+      targetRole: 'merchant',
+    });
     return this.normalizeHotel(saved);
   }
 
