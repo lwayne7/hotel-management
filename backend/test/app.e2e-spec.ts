@@ -1,25 +1,32 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { DataSource } from 'typeorm';
+import { createE2EApp } from './helpers/e2e-app';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
+  let dataSource: DataSource;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+  beforeAll(async () => {
+    ({ app, dataSource } = await createE2EApp());
   });
 
-  it('/ (GET)', () => {
+  afterAll(async () => {
+    if (app) {
+      await app.close();
+    }
+    if (dataSource?.isInitialized) {
+      await dataSource.destroy();
+    }
+  });
+
+  it('/api/healthz (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/api/healthz')
       .expect(200)
-      .expect('Hello World!');
+      .expect(({ body }) => {
+        expect(body.status).toBe('ok');
+        expect(body.checks?.db?.status).toBe('up');
+      });
   });
 });

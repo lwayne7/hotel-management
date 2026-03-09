@@ -2,10 +2,12 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import path from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config';
+import { AppCacheModule } from './cache/cache.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { HotelsModule } from './hotels/hotels.module';
@@ -27,6 +29,10 @@ import { AuditModule } from './audit/audit.module';
       // 使用绝对路径，避免从不同工作目录启动时读不到 env 文件
       envFilePath: [path.resolve(__dirname, '../.env.local'), path.resolve(__dirname, '../.env')],
     }),
+    // 定时任务
+    ScheduleModule.forRoot(),
+    // 全局缓存
+    AppCacheModule,
     // 全局限流：每个 IP 每分钟最多 60 次请求
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     // 数据库模块

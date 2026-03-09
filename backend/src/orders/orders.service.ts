@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { randomBytes } from 'crypto';
 import { Order, OrderStatus } from './order.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Hotel, HotelStatus } from '../hotels/entities/hotel.entity';
@@ -23,12 +24,13 @@ function diffDays(checkIn: string, checkOut: string): number {
   return Math.round((b - a) / 86_400_000);
 }
 
+/** 使用 crypto.randomBytes 代替 Math.random，避免高并发下订单号碰撞 */
 function genOrderNo(): string {
   const now = new Date();
   const y = now.getFullYear();
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
-  const rand = Math.random().toString(16).slice(2, 10).toUpperCase();
+  const rand = randomBytes(6).toString('hex').toUpperCase();
   return `O${y}${m}${d}${rand}`;
 }
 

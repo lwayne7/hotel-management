@@ -21,6 +21,7 @@ const bigintToNumber = {
 
 @Entity('orders')
 @Index(['orderNo'], { unique: true })
+@Index(['status', 'expiresAt'])  // 过期订单扫描（定时任务使用）
 export class Order {
   @PrimaryGeneratedColumn()
   id: number;

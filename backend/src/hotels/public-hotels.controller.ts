@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query, ParseIntPipe, Sse, MessageEvent } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, Sse, MessageEvent, UseInterceptors } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Observable, map } from 'rxjs';
 import { HotelsService } from './hotels.service';
 import { PriceUpdatesService } from './price-updates.service';
@@ -13,6 +14,8 @@ export class PublicHotelsController {
   ) {}
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(15_000) // 列表缓存 15 秒
   @ApiOperation({ summary: '获取已发布酒店列表（用户端，无需登录）' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
@@ -80,6 +83,8 @@ export class PublicHotelsController {
   }
 
   @Get(':id')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30_000) // 详情缓存 30 秒
   @ApiOperation({ summary: '获取已发布酒店详情（用户端，无需登录）' })
   async getOne(@Param('id', ParseIntPipe) id: number) {
     return this.hotelsService.findOneApproved(id);

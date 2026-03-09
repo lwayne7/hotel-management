@@ -1,6 +1,12 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsEnum, IsOptional, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, MaxLength, IsIn, IsOptional, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../../users/entities/user.entity';
+
+/**
+ * 允许自助注册的角色白名单。
+ * admin 角色只能通过 seed 脚本或超级管理员后台创建，禁止通过注册接口自选。
+ */
+const ALLOWED_REGISTER_ROLES = [UserRole.MERCHANT, UserRole.CUSTOMER] as const;
 
 export class RegisterDto {
   @ApiProperty({ description: '用户名', example: 'merchant001' })
@@ -20,8 +26,8 @@ export class RegisterDto {
   })
   password: string;
 
-  @ApiProperty({ description: '用户角色', enum: UserRole, example: UserRole.MERCHANT })
-  @IsEnum(UserRole, { message: '角色必须是 merchant / admin / customer' })
+  @ApiProperty({ description: '用户角色（仅允许 merchant / customer）', enum: ALLOWED_REGISTER_ROLES, example: UserRole.MERCHANT })
+  @IsIn(ALLOWED_REGISTER_ROLES, { message: '注册角色仅允许 merchant 或 customer' })
   role: UserRole;
 
   @ApiPropertyOptional({ description: '昵称', example: '张三酒店' })

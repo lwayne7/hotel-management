@@ -14,17 +14,23 @@ import { UsersModule } from '../users/users.module';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default_secret',
-        signOptions: {
-          expiresIn: 604800, // 7 days in seconds
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET 环境变量未设置，服务拒绝启动。');
+        }
+        return {
+          secret,
+          signOptions: {
+            expiresIn: 604800, // 7 days in seconds
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RolesGuard],
-  exports: [AuthService, JwtStrategy, RolesGuard],
+  exports: [AuthService, JwtStrategy, RolesGuard, JwtModule],
 })
 export class AuthModule {}

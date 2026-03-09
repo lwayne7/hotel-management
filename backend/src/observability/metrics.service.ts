@@ -14,6 +14,8 @@ export class MetricsService implements OnModuleInit {
 
   private readonly httpRequestDurationMs: Histogram<string>;
 
+  private readonly webVitalsHistogram: Histogram<string>;
+
   constructor() {
     this.httpRequestsTotal = new Counter({
       name: 'http_requests_total',
@@ -29,9 +31,21 @@ export class MetricsService implements OnModuleInit {
       buckets: [50, 100, 300, 500, 1000, 2000, 5000, 10000],
       registers: [this.registry],
     });
+
+    this.webVitalsHistogram = new Histogram({
+      name: 'web_vitals',
+      help: 'Frontend Web Vitals metrics (FCP, LCP, CLS, FID, TTFB)',
+      labelNames: ['metric_name', 'rating'],
+      buckets: [10, 50, 100, 250, 500, 1000, 2500, 5000, 10000],
+      registers: [this.registry],
+    });
   }
 
   onModuleInit() {
+    if (process.env.NODE_ENV === 'test') {
+      return;
+    }
+
     collectDefaultMetrics({
       register: this.registry,
       prefix: 'hotel_backend_',
@@ -57,5 +71,11 @@ export class MetricsService implements OnModuleInit {
   async getMetrics(): Promise<string> {
     return this.registry.metrics();
   }
-}
 
+  observeWebVital(name: string, value: number, rating?: string) {
+    this.webVitalsHistogram.observe(
+      { metric_name: name, rating: rating ?? 'unknown' },
+      value,
+    );
+  }
+}

@@ -1,45 +1,38 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
+import { INestApplication } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { createE2EApp, seedE2EData, type E2ESeedResult } from './helpers/e2e-app';
 
 describe('Orders & Payments flow (e2e)', () => {
   let app: INestApplication;
-  let server: any;
+  let server: ReturnType<INestApplication['getHttpServer']>;
+  let dataSource: DataSource;
+  let seeded: E2ESeedResult;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    ({ app, dataSource } = await createE2EApp());
     server = app.getHttpServer();
+    seeded = await seedE2EData(app, dataSource);
   });
 
   afterAll(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
+    if (dataSource?.isInitialized) {
+      await dataSource.destroy();
+    }
   });
 
   it('should create order, pay by callback and see it in my orders', async () => {
-    // 1) 登录获取 customer token（使用种子用户）
-    const loginRes = await request(server)
-      .post('/api/auth/login')
-      .send({ username: 'customer01', password: 'Cust123456' })
-      .expect(200);
-
-    const token = loginRes.body?.accessToken as string;
-    expect(token).toBeDefined();
-
-    // 2) 创建订单
     const createOrderRes = await request(server)
       .post('/api/orders')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${seeded.customerToken}`)
       .send({
-        hotelId: 1,
-        roomTypeId: 1,
-        checkInDate: '2026-03-10',
-        checkOutDate: '2026-03-11',
+        hotelId: seeded.hotelId,
+        roomTypeId: seeded.roomTypeId,
+        checkInDate: seeded.checkInDate,
+        checkOutDate: seeded.checkOutDate,
         rooms: 1,
         guests: 1,
       })
@@ -59,15 +52,13 @@ describe('Orders & Payments flow (e2e)', () => {
       })
       .expect(201);
 
-    // 4) 查询“我的订单”，校验订单已处于 PAID
     const myOrdersRes = await request(server)
       .get('/api/orders/mine')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${seeded.customerToken}`)
       .expect(200);
 
     const order = (myOrdersRes.body.data as any[]).find((o) => o.id === orderId);
     expect(order).toBeDefined();
-    expect(order.status).toBe('PAID');
+    expect(order.status).toBe('paid');
   });
 });
-

@@ -19,11 +19,11 @@ interface DisplayNotification {
 const { Text } = Typography;
 
 const WS_URL = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+  ? import.meta.env.VITE_API_URL.replace(/\/api(\/v\d+)?\/?$/, '')
   : (import.meta.env.DEV ? 'http://localhost:3000' : window.location.origin);
 
 const NotificationBell: React.FC = () => {
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, token } = useAppSelector((state) => state.auth);
   const [notifications, setNotifications] = useState<DisplayNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const socketRef = useRef<Socket | null>(null);
@@ -54,9 +54,9 @@ const NotificationBell: React.FC = () => {
 
   // WebSocket 实时推送
   useEffect(() => {
-    if (!user) return;
+    if (!user || !token) return;
     const socket = io(`${WS_URL}/notifications`, {
-      query: { role: user.role, userId: user.id },
+      auth: { token },
       transports: ['websocket', 'polling'],
     });
     socketRef.current = socket;
@@ -69,7 +69,7 @@ const NotificationBell: React.FC = () => {
     return () => {
       socket.disconnect();
     };
-  }, [user]);
+  }, [token, user]);
 
   const handleOpen = (open: boolean) => {
     if (open && unread > 0) {

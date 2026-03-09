@@ -23,6 +23,7 @@ export default registerAs('database', () => {
   const databaseUrl = process.env.DATABASE_URL;
   const dbType = databaseUrl ? 'postgres' : process.env.DB_TYPE?.toLowerCase();
   const isProd = process.env.NODE_ENV === 'production';
+  const isTest = process.env.NODE_ENV === 'test';
 
   if (dbType === 'postgres' || dbType === 'postgresql') {
     const conn = databaseUrl
@@ -39,7 +40,7 @@ export default registerAs('database', () => {
       type: 'postgres',
       ...conn,
       synchronize: !isProd,
-      logging: !isProd,
+      logging: !isProd && !isTest,
       ...(isRemote ? { ssl: { rejectUnauthorized: false } } : {}),
     };
   }
@@ -48,7 +49,6 @@ export default registerAs('database', () => {
     type: 'better-sqlite3',
     database: resolveSqliteDatabasePath(process.env.DB_DATABASE || 'hotel_management.sqlite'),
     synchronize: !isProd,
-    logging: !isProd,
+    logging: !isProd && !isTest,
   };
 });
-

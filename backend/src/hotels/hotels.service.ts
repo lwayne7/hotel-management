@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Hotel, HotelStatus } from './entities/hotel.entity';
 import { RoomType } from './entities/room-type.entity';
 import { HotelImage } from './entities/hotel-image.entity';
@@ -79,6 +79,7 @@ export class HotelsService {
     private roomTypesRepository: Repository<RoomType>,
     @InjectRepository(HotelImage)
     private hotelImagesRepository: Repository<HotelImage>,
+    private readonly dataSource: DataSource,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly priceUpdatesService: PriceUpdatesService,
   ) {}
@@ -196,7 +197,7 @@ export class HotelsService {
     return this.normalizeHotel(hotel);
   }
 
-  // 更新酒店
+  // 更新酒店（事务保护：hotel + roomTypes + images 原子更新）
   async update(
     id: number,
     updateHotelDto: UpdateHotelDto,
@@ -220,13 +221,45 @@ export class HotelsService {
     // 已发布或已下线的酒店编辑后需要重新审核
     const needsReReview = [HotelStatus.APPROVED, HotelStatus.OFFLINE].includes(hotel.status);
 
-    // 更新酒店基本信息
-    Object.assign(hotel, hotelData);
-    if (needsReReview) {
-      hotel.status = HotelStatus.PENDING;
-      hotel.rejectReason = null;
-    }
-    await this.hotelsRepository.save(hotel);
+    await this.dataSource.transaction(async (manager) => {
+      const hotelRepo = manager.getRepository(Hotel);
+      const roomTypeRepo = manager.getRepository(RoomType);
+      const imageRepo = manager.getRepository(HotelImage);
+
+      // 更新酒店基本信息
+      Object.assign(hotel, hotelData);
+      if (needsReReview) {
+        hotel.status = HotelStatus.PENDING;
+        hotel.rejectReason = null;
+      }
+      await hotelRepo.save(hotel);
+
+      // 更新房型（删除旧的，创建新的）
+      if (roomTypes !== undefined) {
+        await roomTypeRepo.delete({ hotelId: id });
+        if (roomTypes.length > 0) {
+          const roomTypeEntities = roomTypes.map((rt) =>
+            roomTypeRepo.create({ ...rt, hotelId: id }),
+          );
+          await roomTypeRepo.save(roomTypeEntities);
+        }
+      }
+
+      // 更新图片（删除旧的，创建新的）
+      if (images !== undefined) {
+        await imageRepo.delete({ hotelId: id });
+        if (images.length > 0) {
+          const imageEntities = images.map((img, index) =>
+            imageRepo.create({
+              ...img,
+              hotelId: id,
+              sortOrder: img.sortOrder ?? index,
+            }),
+          );
+          await imageRepo.save(imageEntities);
+        }
+      }
+    });
 
     // 已发布/已下线酒店编辑后状态自动变为 pending，需通知管理员
     if (needsReReview) {
@@ -238,32 +271,6 @@ export class HotelsService {
         timestamp: Date.now(),
         targetRole: 'admin',
       });
-    }
-
-    // 更新房型（删除旧的，创建新的）
-    if (roomTypes !== undefined) {
-      await this.roomTypesRepository.delete({ hotelId: id });
-      if (roomTypes.length > 0) {
-        const roomTypeEntities = roomTypes.map((rt) =>
-          this.roomTypesRepository.create({ ...rt, hotelId: id }),
-        );
-        await this.roomTypesRepository.save(roomTypeEntities);
-      }
-    }
-
-    // 更新图片（删除旧的，创建新的）
-    if (images !== undefined) {
-      await this.hotelImagesRepository.delete({ hotelId: id });
-      if (images.length > 0) {
-        const imageEntities = images.map((img, index) =>
-          this.hotelImagesRepository.create({
-            ...img,
-            hotelId: id,
-            sortOrder: img.sortOrder ?? index,
-          }),
-        );
-        await this.hotelImagesRepository.save(imageEntities);
-      }
     }
 
     if (prevStatus === HotelStatus.APPROVED && hotel.status !== HotelStatus.APPROVED) {

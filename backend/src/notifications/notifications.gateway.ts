@@ -6,8 +6,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
 import { UserRole } from '../users/entities/user.entity';
+import type { JwtPayload } from '../auth/jwt.strategy';
 
 export interface NotificationPayload {
   type:
@@ -40,11 +42,40 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   private connectedClients = new Map<string, { role?: string; userId?: number }>();
 
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  private extractToken(client: Socket): string | null {
+    const authToken = client.handshake.auth?.token;
+    const queryToken = client.handshake.query.token;
+    const rawToken =
+      (typeof authToken === 'string' && authToken) ||
+      (typeof queryToken === 'string' && queryToken) ||
+      null;
+
+    if (!rawToken) return null;
+    return rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
+  }
 
   handleConnection(client: Socket) {
-    const role = client.handshake.query.role as string;
-    const userId = Number(client.handshake.query.userId) || undefined;
+    const token = this.extractToken(client);
+    if (!token) {
+      client.disconnect(true);
+      return;
+    }
+
+    let payload: JwtPayload;
+    try {
+      payload = this.jwtService.verify<JwtPayload>(token);
+    } catch {
+      client.disconnect(true);
+      return;
+    }
+
+    const role = payload.role;
+    const userId = payload.sub;
     this.connectedClients.set(client.id, { role, userId });
     client.join(`role:${role}`);
     if (userId) client.join(`user:${userId}`);

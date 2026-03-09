@@ -20,10 +20,9 @@ export class AuditLog {
   @Column({ type: 'int', nullable: true })
   targetId: number | null;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'simple-json', nullable: true })
   payload: Record<string, unknown> | null;
 
   @Column({ type: 'bigint' })
   createdAt: number;
 }
-

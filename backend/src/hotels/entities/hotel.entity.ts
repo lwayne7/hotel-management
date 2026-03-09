@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -19,6 +20,8 @@ export enum HotelStatus {
 }
 
 @Entity('hotels')
+@Index(['status', 'updatedAt'])       // 按状态+时间查询（公开列表、管理列表）
+@Index(['merchantId', 'status'])      // 商户查自己的酒店
 export class Hotel {
   @PrimaryGeneratedColumn()
   id: number;

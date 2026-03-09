@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Hotel } from './hotel.entity';
 
@@ -15,6 +16,7 @@ export enum DiscountType {
 }
 
 @Entity('room_types')
+@Index(['hotelId', 'price'])  // 按酒店查房型并按价格排序
 export class RoomType {
   @PrimaryGeneratedColumn()
   id: number;

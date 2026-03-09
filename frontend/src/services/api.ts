@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,7 +13,7 @@ const api = axios.create({
 // 请求拦截器：添加 Token
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,8 +35,8 @@ api.interceptors.response.use(
 
     // 登录/注册失败时不要强制跳转，否则看不到错误提示
     if (status === 401 && !isLoginOrRegister) {
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
@@ -54,7 +54,7 @@ export interface LoginParams {
 export interface RegisterParams {
   username: string;
   password: string;
-  role: 'merchant' | 'admin';
+  role: 'merchant' | 'customer';
   nickname?: string;
   phone?: string;
 }
@@ -63,7 +63,7 @@ export interface AuthResponse {
   user: {
     id: number;
     username: string;
-    role: 'merchant' | 'admin';
+    role: 'merchant' | 'admin' | 'customer';
     nickname?: string;
     phone?: string;
   };

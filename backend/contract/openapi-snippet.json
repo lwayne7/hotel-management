@@ -1,0 +1,48 @@
+{
+  "paths": {
+    "/api/public/hotels": {
+      "get": {
+        "summary": "查询酒店列表（公开端）",
+        "parameters": [
+          { "name": "city", "in": "query", "schema": { "type": "string" } },
+          { "name": "keyword", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "pageSize", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "酒店列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "nameCn": { "type": "string" },
+                          "city": { "type": "string" },
+                          "starRating": { "type": "integer" },
+                          "minPrice": { "type": "number" }
+                        },
+                        "required": ["id", "nameCn", "city", "starRating", "minPrice"]
+                      }
+                    },
+                    "page": { "type": "integer" },
+                    "pageSize": { "type": "integer" },
+                    "total": { "type": "integer" }
+                  },
+                  "required": ["data", "page", "pageSize", "total"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

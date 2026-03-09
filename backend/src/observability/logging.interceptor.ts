@@ -28,20 +28,22 @@ export class LoggingInterceptor implements NestInterceptor {
         const duration = Date.now() - now;
         const statusCode = res.statusCode;
 
-        // 结构化日志，便于后续接入集中日志系统
-        // eslint-disable-next-line no-console
-        console.log(
-          JSON.stringify({
-            type: 'http_request',
-            timestamp: new Date().toISOString(),
-            requestId,
-            method,
-            route,
-            originalUrl,
-            statusCode,
-            durationMs: duration,
-          }),
-        );
+        if (process.env.NODE_ENV !== 'test') {
+          // 结构化日志，便于后续接入集中日志系统
+          // eslint-disable-next-line no-console
+          console.log(
+            JSON.stringify({
+              type: 'http_request',
+              timestamp: new Date().toISOString(),
+              requestId,
+              method,
+              route,
+              originalUrl,
+              statusCode,
+              durationMs: duration,
+            }),
+          );
+        }
 
         this.metricsService.observeRequest(
           method,
@@ -53,4 +55,3 @@ export class LoggingInterceptor implements NestInterceptor {
     );
   }
 }
-
