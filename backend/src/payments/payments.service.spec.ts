@@ -26,7 +26,7 @@ describe('PaymentsService (idempotency)', () => {
     await ds.initialize();
 
     const inventoryService = new InventoryService();
-    const notificationsGateway = { sendNotification: () => {} } as any;
+    const notificationsGateway = { sendNotification: () => { } } as any;
     ordersService = new OrdersService(
       ds,
       ds.getRepository(Order),
@@ -105,7 +105,7 @@ describe('PaymentsService (idempotency)', () => {
     });
     expect(r1.ok).toBe(true);
     expect(r1.idempotent).toBe(false);
-    expect(r1.order.status).toBe(OrderStatus.PAID);
+    expect((r1 as any).order.status).toBe(OrderStatus.PAID);
 
     const r2 = await paymentsService.handleCallback({
       eventId: 'evt_repeat',

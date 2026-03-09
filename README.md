@@ -18,6 +18,9 @@
 | 🗂️ **万级种子数据** | 一键生成 10 000 家酒店 × 50 城市 × 5 星级 × 150+ 张 Unsplash 高质量图片 |
 | 📝 **Swagger 文档** | 自动生成 OpenAPI 文档，开箱即用 |
 | 🎨 **企业级 UI** | Ant Design 6 定制主题、深色侧边栏、响应式布局、ErrorBoundary 兜底 |
+| 🛡️ **安全加固** | Helmet 安全头 + ThrottlerModule 限流（60req/min）+ ValidationPipe 白名单 |
+| ✅ **CI + 测试** | GitHub Actions CI（Lint + Test + Build）；67 后端单测 + E2E 覆盖状态机/订单/支付幂等 |
+| 📊 **可观测性** | Prometheus 指标（QPS / 延迟分布）+ 结构化日志 + 健康检查端点 |
 
 ---
 
@@ -32,8 +35,8 @@
 - **支付回调幂等与乱序安全**：通过 `PaymentEvent(eventId)` 唯一约束与终态幂等处理，避免重复扣减库存或错误状态迁移。
 - **实时链路设计**：公开端用 SSE 推价格变更流，管理端用 WebSocket 推审核/订单结果，小程序/RN 端用轮询兜底。
 - **可观测性与排障**：`/metrics` + `/healthz` + 结构化日志（`requestId`），可以从告警一路追到具体请求与 SQL。
-- **安全与审计**：`class-validator` 全面做输入白名单校验，TypeORM 参数化防注入，敏感操作写入 `AuditLog` 便于追责。
-- **测试与 CI 思路**：订单/支付有成体系的单测与 E2E 测试，并提供 GitHub Actions CI 的示例工作流。
+- **安全与审计**：Helmet 安全头 + `@nestjs/throttler` 限流 + `class-validator` 白名单校验 + TypeORM 参数化防注入 + `AuditLog` 审计。
+- **测试与 CI**：67 后端单测（审核状态机 49 条全覆盖 + 订单/支付幂等）、E2E 测试、GitHub Actions CI 自动化流水线。TypeScript `strict: true`。
 
 ---
 
@@ -56,6 +59,9 @@
 - 📈 **RxJS** — 服务端 SSE 价格变更流
 - 📝 **Swagger** — 自动 OpenAPI 文档
 - 🌱 **Seed 系统** — 一键初始化 / 批量生成 / 清空 / 更新图片
+- 🛡️ **Helmet + @nestjs/throttler** — 安全 HTTP 头 + 全局限流
+- 📊 **prom-client** — Prometheus 指标采集（QPS / 延迟直方图）
+- ✅ **Jest 30** — 67 单测 + E2E，`strict: true` TypeScript
 
 ---
 

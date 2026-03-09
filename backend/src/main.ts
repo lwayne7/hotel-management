@@ -2,11 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { LoggingInterceptor } from './observability/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // 安全 HTTP 头（X-Content-Type-Options, X-Frame-Options 等）
+  app.use(helmet());
 
   // 设置全局路由前缀
   app.setGlobalPrefix('api');
@@ -27,7 +31,7 @@ async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
   app.enableCors({
     origin: isProd
-      ? (origin, callback) => {
+      ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         const allowed =
           !origin ||
           /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
