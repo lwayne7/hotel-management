@@ -7,7 +7,7 @@ import { AppModule } from '../../src/app.module';
 import { configureApp } from '../../src/app.bootstrap';
 import { User, UserRole } from '../../src/users/entities/user.entity';
 import { Hotel, HotelStatus } from '../../src/hotels/entities/hotel.entity';
-import { RoomType } from '../../src/hotels/entities/room-type.entity';
+import { DiscountType, RoomType } from '../../src/hotels/entities/room-type.entity';
 import { RoomInventory } from '../../src/inventory/room-inventory.entity';
 
 export interface E2ESeedResult {
@@ -99,21 +99,21 @@ export async function seedE2EData(
     merchantId: merchant.id,
   } as Hotel);
 
-  const roomType = await roomTypeRepository.save({
+  const roomTypeData: Partial<RoomType> = {
     name: '高级大床房',
     price: 399,
     originalPrice: 499,
-    discountType: 'none',
-    discountValue: null,
-    discountDescription: null,
+    discountType: DiscountType.NONE,
     maxGuests: 2,
     bedType: '1.8m 大床',
     roomSize: 32,
     amenities: ['空调'],
-    imageUrl: null,
     description: 'E2E 房型',
     hotelId: hotel.id,
-  } as RoomType);
+  };
+  const roomType = await roomTypeRepository.save(
+    roomTypeRepository.create(roomTypeData),
+  );
 
   const today = new Date();
   const start = new Date(

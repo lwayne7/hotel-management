@@ -6,6 +6,10 @@ import { RoomType } from '../hotels/entities/room-type.entity';
 import { RoomInventory } from '../inventory/room-inventory.entity';
 import { InventoryService } from '../inventory/inventory.service';
 
+type MockEntityManager = {
+  getRepository: (entity: unknown) => unknown;
+};
+
 /**
  * 并发场景测试：两个用户同时抢最后一间房。
  *
@@ -64,49 +68,66 @@ describe('OrdersService - Concurrency', () => {
 
     orderIdCounter = 1;
 
+    const mockManager: MockEntityManager = {
+      getRepository: (entity: unknown) => {
+        if (entity === Hotel) {
+          return { findOne: jest.fn().mockResolvedValue(mockHotel) };
+        }
+        if (entity === RoomType) {
+          return { findOne: jest.fn().mockResolvedValue(mockRoomType) };
+        }
+        if (entity === RoomInventory) {
+          return {
+            createQueryBuilder: () => ({
+              where: function () {
+                return this;
+              },
+              andWhere: function () {
+                return this;
+              },
+              setLock: function () {
+                return this;
+              },
+              getMany: jest.fn().mockResolvedValue([inventoryRow]),
+            }),
+            save: jest.fn(async (rows: RoomInventory[]) => rows),
+          };
+        }
+        if (entity === Order) {
+          return {
+            create: jest.fn((data: Record<string, unknown>) => ({
+              ...data,
+              id: orderIdCounter++,
+            })),
+            save: jest.fn(async (order: Record<string, unknown>) => order),
+          };
+        }
+        return {};
+      },
+    };
+
+    const transaction: DataSource['transaction'] = async <T>(
+      isolationOrRunInTransaction:
+        | ((entityManager: never) => Promise<T>)
+        | string,
+      maybeRunInTransaction?: (entityManager: never) => Promise<T>,
+    ): Promise<T> => {
+      const runInTransaction =
+        typeof isolationOrRunInTransaction === 'function'
+          ? isolationOrRunInTransaction
+          : maybeRunInTransaction;
+
+      if (!runInTransaction) {
+        throw new Error('transaction callback is required');
+      }
+
+      return runInTransaction(mockManager as never);
+    };
+
     // 模拟 DataSource.transaction：串行执行回调但共享 inventoryRow
     mockDataSource = {
       options: { type: 'better-sqlite3' } as any,
-      transaction: jest.fn(async (cb: (manager: any) => Promise<any>) => {
-        const mockManager = {
-          getRepository: (entity: any) => {
-            if (entity === Hotel) {
-              return { findOne: jest.fn().mockResolvedValue(mockHotel) };
-            }
-            if (entity === RoomType) {
-              return { findOne: jest.fn().mockResolvedValue(mockRoomType) };
-            }
-            if (entity === RoomInventory) {
-              return {
-                createQueryBuilder: () => ({
-                  where: function () {
-                    return this;
-                  },
-                  andWhere: function () {
-                    return this;
-                  },
-                  setLock: function () {
-                    return this;
-                  },
-                  getMany: jest.fn().mockResolvedValue([inventoryRow]),
-                }),
-                save: jest.fn(async (rows: RoomInventory[]) => rows),
-              };
-            }
-            if (entity === Order) {
-              return {
-                create: jest.fn((data: any) => ({
-                  ...data,
-                  id: orderIdCounter++,
-                })),
-                save: jest.fn(async (order: any) => order),
-              };
-            }
-            return {};
-          },
-        };
-        return cb(mockManager);
-      }),
+      transaction,
     };
 
     mockOrdersRepo = {

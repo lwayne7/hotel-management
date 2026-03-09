@@ -5,8 +5,19 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { User, UserRole } from '../users/entities/user.entity';
 
-type CreateUserData = Pick<User, 'username' | 'password' | 'role'> &
-  Partial<Pick<User, 'nickname' | 'phone'>>;
+function buildMockUser(userData: Partial<User>, id: number): User {
+  return {
+    id,
+    username: userData.username ?? '',
+    password: userData.password ?? '',
+    role: userData.role ?? UserRole.MERCHANT,
+    nickname: userData.nickname ?? null,
+    phone: userData.phone ?? null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    hotels: [],
+  } as User;
+}
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -45,18 +56,8 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should create a new user with hashed password and return JWT token', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(
-        async (userData: CreateUserData) => {
-          const id = nextUserId++;
-          return {
-            id,
-            username: userData.username,
-            password: userData.password,
-            role: userData.role,
-            nickname: userData.nickname ?? null,
-            phone: userData.phone ?? null,
-          } as unknown as User;
-        },
+      mockUsersService.create.mockImplementation(async (userData: Partial<User>) =>
+        buildMockUser(userData, nextUserId++),
       );
 
       const result = await authService.register({
@@ -73,11 +74,12 @@ describe('AuthService', () => {
       );
 
       // The password stored should be a bcrypt hash, not plaintext
-      const createCall = mockUsersService.create.mock
-        .calls[0][0] as CreateUserData;
+      const createCall = mockUsersService.create.mock.calls[0][0];
       expect(createCall.username).toBe('merchant001');
       expect(createCall.password).not.toBe('Password123');
-      const isHashed = await bcrypt.compare('Password123', createCall.password);
+      expect(typeof createCall.password).toBe('string');
+      const hashedPassword = createCall.password as string;
+      const isHashed = await bcrypt.compare('Password123', hashedPassword);
       expect(isHashed).toBe(true);
 
       // Should sign JWT with correct payload
@@ -111,12 +113,8 @@ describe('AuthService', () => {
 
     it('should work correctly with merchant role', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(
-        async (userData: CreateUserData) =>
-          ({
-            id: nextUserId++,
-            ...userData,
-          }) as unknown as User,
+      mockUsersService.create.mockImplementation(async (userData: Partial<User>) =>
+        buildMockUser(userData, nextUserId++),
       );
 
       const result = await authService.register({
@@ -133,12 +131,8 @@ describe('AuthService', () => {
 
     it('should work correctly with customer role', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(
-        async (userData: CreateUserData) =>
-          ({
-            id: nextUserId++,
-            ...userData,
-          }) as unknown as User,
+      mockUsersService.create.mockImplementation(async (userData: Partial<User>) =>
+        buildMockUser(userData, nextUserId++),
       );
 
       const result = await authService.register({
