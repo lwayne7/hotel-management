@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHmac } from 'crypto';
+import { Request } from 'express';
 
 /**
  * 支付回调签名验证守卫。
@@ -30,7 +31,7 @@ export class PaymentSignatureGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
 
     // 开发环境未配置签名密钥时放行但打印警告
     if (!this.paymentSecret) {

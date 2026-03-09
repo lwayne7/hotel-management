@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Badge, Popover, List, Typography, Empty, Button } from 'antd';
 import { BellOutlined } from '@ant-design/icons';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { useAppSelector } from '../../store/hooks';
 import { notificationApi } from '../../services/api';
 import dayjs from 'dayjs';
@@ -26,31 +26,37 @@ const NotificationBell: React.FC = () => {
   const { user, token } = useAppSelector((state) => state.auth);
   const [notifications, setNotifications] = useState<DisplayNotification[]>([]);
   const [unread, setUnread] = useState(0);
-  const socketRef = useRef<Socket | null>(null);
-
-  // 登录后从数据库拉取历史未读通知
-  const fetchUnread = useCallback(async () => {
-    if (!user) return;
-    try {
-      const items = await notificationApi.getUnread();
-      const mapped: DisplayNotification[] = items.map((n) => ({
-        id: n.id,
-        type: n.type,
-        hotelId: n.hotelId,
-        hotelName: n.hotelName,
-        message: n.message,
-        timestamp: n.timestamp,
-      }));
-      setNotifications(mapped);
-      setUnread(mapped.length);
-    } catch {
-      // 静默失败，不影响主功能
-    }
-  }, [user]);
 
   useEffect(() => {
-    void fetchUnread();
-  }, [fetchUnread]);
+    if (!user) return;
+
+    let cancelled = false;
+
+    void notificationApi
+      .getUnread()
+      .then((items) => {
+        if (cancelled) return;
+
+        const mapped: DisplayNotification[] = items.map((n) => ({
+          id: n.id,
+          type: n.type,
+          hotelId: n.hotelId,
+          hotelName: n.hotelName,
+          message: n.message,
+          timestamp: n.timestamp,
+        }));
+
+        setNotifications(mapped);
+        setUnread(mapped.length);
+      })
+      .catch(() => {
+        // 静默失败，不影响主功能
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // WebSocket 实时推送
   useEffect(() => {
@@ -59,7 +65,6 @@ const NotificationBell: React.FC = () => {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
-    socketRef.current = socket;
 
     socket.on('notification', (data: DisplayNotification) => {
       setNotifications((prev) => [data, ...prev].slice(0, 50));

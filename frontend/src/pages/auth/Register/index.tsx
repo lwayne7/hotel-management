@@ -4,7 +4,6 @@ import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { register, clearError } from '../../../store/slices/authSlice';
-import type { UserRole } from '../../../store/slices/authSlice';
 import type { AuthResponse, RegisterParams } from '../../../services/api';
 import '../Login/auth.css';
 
@@ -14,7 +13,7 @@ interface RegisterFormValues {
   username: string;
   password: string;
   confirmPassword: string;
-  role: UserRole;
+  role: RegisterParams['role'];
   nickname?: string;
   phone?: string;
 }
@@ -79,8 +78,8 @@ const Register: React.FC = () => {
               <Radio.Button value="merchant" style={{ flex: 1, textAlign: 'center' }}>
                 商户
               </Radio.Button>
-              <Radio.Button value="admin" style={{ flex: 1, textAlign: 'center' }}>
-                管理员
+              <Radio.Button value="customer" style={{ flex: 1, textAlign: 'center' }}>
+                用户
               </Radio.Button>
             </Radio.Group>
           </Form.Item>

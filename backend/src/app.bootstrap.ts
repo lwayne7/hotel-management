@@ -39,10 +39,10 @@ function setupSwagger(app: INestApplication) {
   SwaggerModule.setup('api/v1/docs', app, document);
 }
 
-export async function configureApp(
+export function configureApp(
   app: INestApplication,
   options?: { swagger?: boolean },
-) {
+): INestApplication {
   app.use(helmet());
   // API 版本前缀：所有路由带 /api/v1 前缀，后续新增 v2 时可并行部署
   app.setGlobalPrefix('api/v1');
@@ -66,12 +66,12 @@ export async function configureApp(
 export function logDatabaseInfo(app: INestApplication) {
   try {
     const configService = app.get(ConfigService);
-    const dbType = configService.get<string>('database.type');
+    const dbType = configService.get<'postgres' | 'better-sqlite3'>('database.type');
     if (dbType === 'better-sqlite3') {
-      console.log(`🗄️  DB: sqlite (${configService.get('database.database')})`);
+      console.log(`🗄️  DB: sqlite (${configService.get<string>('database.database')})`);
     } else {
       console.log(
-        `🗄️  DB: postgres (${configService.get('database.host')}:${configService.get('database.port')}/${configService.get('database.database')})`,
+        `🗄️  DB: postgres (${configService.get<string>('database.host')}:${configService.get<number>('database.port')}/${configService.get<string>('database.database')})`,
       );
     }
   } catch {

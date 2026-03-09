@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { authApi, type LoginParams, type RegisterParams, type AuthResponse } from '../../services/api';
 import { getApiErrorMessage } from '../../utils/error';
 
-export type UserRole = 'merchant' | 'admin';
+export type UserRole = 'merchant' | 'admin' | 'customer';
 
 export interface User {
   id: number;

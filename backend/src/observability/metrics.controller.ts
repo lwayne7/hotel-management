@@ -30,7 +30,7 @@ export class MetricsController {
   @Post('web-vitals')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: '接收前端 Web Vitals 性能指标上报' })
-  async receiveWebVitals(@Body() payload: WebVitalsPayload): Promise<void> {
+  receiveWebVitals(@Body() payload: WebVitalsPayload): void {
     if (!Array.isArray(payload?.metrics)) return;
 
     for (const metric of payload.metrics) {

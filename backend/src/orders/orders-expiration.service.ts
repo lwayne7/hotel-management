@@ -25,7 +25,7 @@ export class OrdersExpirationService {
     const expiredOrders = await repo.find({
       where: {
         status: OrderStatus.PENDING_PAYMENT,
-        expiresAt: LessThan(now) as any,
+        expiresAt: LessThan(now) as unknown as number,
       },
     });
 
@@ -57,8 +57,9 @@ export class OrdersExpirationService {
           await orderRepo.save(fresh);
         });
         successCount++;
-      } catch (err: any) {
-        this.logger.error(`订单 ${order.orderNo} 过期处理失败: ${err.message}`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.error(`订单 ${order.orderNo} 过期处理失败: ${message}`);
       }
     }
 

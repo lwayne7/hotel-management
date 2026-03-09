@@ -39,28 +39,31 @@ import { AuditModule } from './audit/audit.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const dbType = configService.get('database.type');
+        const dbType = configService.get<'postgres' | 'better-sqlite3'>('database.type');
+        const entities = [__dirname + '/**/*.entity{.ts,.js}'];
+        const synchronize = configService.get<boolean>('database.synchronize') ?? false;
+        const logging = configService.get<boolean>('database.logging') ?? false;
 
         if (dbType === 'better-sqlite3') {
           return {
             type: 'better-sqlite3',
-            database: configService.get('database.database'),
-            entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: configService.get('database.synchronize'),
-            logging: configService.get('database.logging'),
+            database: configService.get<string>('database.database') ?? 'hotel_management.sqlite',
+            entities,
+            synchronize,
+            logging,
           };
         }
 
         return {
           type: 'postgres',
-          host: configService.get('database.host'),
-          port: configService.get('database.port'),
-          username: configService.get('database.username'),
-          password: configService.get('database.password'),
-          database: configService.get('database.database'),
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: configService.get('database.synchronize'),
-          logging: configService.get('database.logging'),
+          host: configService.get<string>('database.host') ?? 'localhost',
+          port: configService.get<number>('database.port') ?? 5432,
+          username: configService.get<string>('database.username') ?? 'postgres',
+          password: configService.get<string>('database.password') ?? 'postgres',
+          database: configService.get<string>('database.database') ?? 'hotel_management',
+          entities,
+          synchronize,
+          logging,
         };
       },
       inject: [ConfigService],

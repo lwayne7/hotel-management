@@ -3,7 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
+
+type CreateUserData = Pick<User, 'username' | 'password' | 'role'> &
+  Partial<Pick<User, 'nickname' | 'phone'>>;
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -37,7 +40,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should create a new user with hashed password and return JWT token', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(async (userData: any) => {
+      mockUsersService.create.mockImplementation(async (userData: CreateUserData) => {
         const id = nextUserId++;
         return {
           id,
@@ -46,7 +49,7 @@ describe('AuthService', () => {
           role: userData.role,
           nickname: userData.nickname ?? null,
           phone: userData.phone ?? null,
-        } as any;
+        } as unknown as User;
       });
 
       const result = await authService.register({
@@ -61,7 +64,7 @@ describe('AuthService', () => {
       expect(mockUsersService.existsByUsername).toHaveBeenCalledWith('merchant001');
 
       // The password stored should be a bcrypt hash, not plaintext
-      const createCall = mockUsersService.create.mock.calls[0][0] as any;
+      const createCall = mockUsersService.create.mock.calls[0][0] as CreateUserData;
       expect(createCall.username).toBe('merchant001');
       expect(createCall.password).not.toBe('Password123');
       const isHashed = await bcrypt.compare('Password123', createCall.password);
@@ -69,7 +72,7 @@ describe('AuthService', () => {
 
       // Should sign JWT with correct payload
       expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: expect.any(Number),
+        sub: expect.any(Number) as number,
         username: 'merchant001',
         role: UserRole.MERCHANT,
       });
@@ -77,7 +80,7 @@ describe('AuthService', () => {
       // Should return token and user without password
       expect(result.access_token).toBe('mock_token');
       expect(result.user).toBeDefined();
-      expect((result.user as any).password).toBeUndefined();
+      expect(result.user).not.toHaveProperty('password');
       expect(result.user.username).toBe('merchant001');
     });
 
@@ -98,10 +101,10 @@ describe('AuthService', () => {
 
     it('should work correctly with merchant role', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(async (userData: any) => ({
+      mockUsersService.create.mockImplementation(async (userData: CreateUserData) => ({
         id: nextUserId++,
         ...userData,
-      }));
+      } as unknown as User));
 
       const result = await authService.register({
         username: 'merchant002',
@@ -117,10 +120,10 @@ describe('AuthService', () => {
 
     it('should work correctly with customer role', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(async (userData: any) => ({
+      mockUsersService.create.mockImplementation(async (userData: CreateUserData) => ({
         id: nextUserId++,
         ...userData,
-      }));
+      } as unknown as User));
 
       const result = await authService.register({
         username: 'customer001',
@@ -147,7 +150,7 @@ describe('AuthService', () => {
         role: UserRole.MERCHANT,
         nickname: 'Test',
         phone: '13800000000',
-      } as any);
+      } as User);
 
       const result = await authService.login({
         username: 'merchant001',
@@ -161,7 +164,7 @@ describe('AuthService', () => {
       });
       expect(result.access_token).toBe('mock_token');
       expect(result.user).toBeDefined();
-      expect((result.user as any).password).toBeUndefined();
+      expect(result.user).not.toHaveProperty('password');
     });
 
     it('should throw UnauthorizedException for invalid username', async () => {
@@ -184,7 +187,7 @@ describe('AuthService', () => {
         username: 'merchant001',
         password: HASHED_PASSWORD,
         role: UserRole.MERCHANT,
-      } as any);
+      } as User);
 
       await expect(
         authService.login({
@@ -206,7 +209,7 @@ describe('AuthService', () => {
         role: UserRole.MERCHANT,
         nickname: 'Test',
         phone: '13800000000',
-      } as any;
+      } as User;
       mockUsersService.findById.mockResolvedValue(mockUser);
 
       const result = await authService.validateUser(1);

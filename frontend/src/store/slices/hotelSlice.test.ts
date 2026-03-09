@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { Hotel } from '../../types/hotel';
 import hotelReducer, {
   clearCurrentHotel,
   clearError,
@@ -31,7 +32,7 @@ const emptyState = {
   pagination: { page: 1, pageSize: 10, total: 0 },
 };
 
-const sampleHotel = {
+const sampleHotel: Hotel = {
   id: 1,
   nameCn: '测试酒店',
   nameEn: 'Test Hotel',
@@ -56,7 +57,7 @@ describe('hotelSlice', () => {
 
   describe('clearCurrentHotel', () => {
     it('should set currentHotel to null', () => {
-      const stateWithHotel = { ...emptyState, currentHotel: sampleHotel as any };
+      const stateWithHotel = { ...emptyState, currentHotel: sampleHotel };
       const state = hotelReducer(stateWithHotel, clearCurrentHotel());
       expect(state.currentHotel).toBeNull();
     });
@@ -125,7 +126,7 @@ describe('hotelSlice', () => {
 
   describe('updateHotel', () => {
     it('fulfilled should update hotel in list', () => {
-      const stateWithHotel = { ...emptyState, hotels: [sampleHotel as any] };
+      const stateWithHotel = { ...emptyState, hotels: [sampleHotel] };
       const updated = { ...sampleHotel, nameCn: '修改后的酒店' };
       const state = hotelReducer(stateWithHotel, {
         type: updateHotel.fulfilled.type,
@@ -138,7 +139,7 @@ describe('hotelSlice', () => {
 
   describe('submitForReview', () => {
     it('fulfilled should update hotel status in list', () => {
-      const stateWithHotel = { ...emptyState, hotels: [sampleHotel as any] };
+      const stateWithHotel = { ...emptyState, hotels: [sampleHotel] };
       const submitted = { ...sampleHotel, status: 'pending' as const };
       const state = hotelReducer(stateWithHotel, {
         type: submitForReview.fulfilled.type,
