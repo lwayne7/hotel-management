@@ -79,9 +79,15 @@ describe('OrdersService - Concurrency', () => {
             if (entity === RoomInventory) {
               return {
                 createQueryBuilder: () => ({
-                  where: function () { return this; },
-                  andWhere: function () { return this; },
-                  setLock: function () { return this; },
+                  where: function () {
+                    return this;
+                  },
+                  andWhere: function () {
+                    return this;
+                  },
+                  setLock: function () {
+                    return this;
+                  },
                   getMany: jest.fn().mockResolvedValue([inventoryRow]),
                 }),
                 save: jest.fn(async (rows: RoomInventory[]) => rows),
@@ -89,7 +95,10 @@ describe('OrdersService - Concurrency', () => {
             }
             if (entity === Order) {
               return {
-                create: jest.fn((data: any) => ({ ...data, id: orderIdCounter++ })),
+                create: jest.fn((data: any) => ({
+                  ...data,
+                  id: orderIdCounter++,
+                })),
                 save: jest.fn(async (order: any) => order),
               };
             }
@@ -133,7 +142,9 @@ describe('OrdersService - Concurrency', () => {
     expect(inventoryRow.reserved).toBe(1);
 
     // 第二个用户下单应失败（库存不足）
-    await expect(ordersService.createOrder(2, createDto)).rejects.toThrow('库存不足');
+    await expect(ordersService.createOrder(2, createDto)).rejects.toThrow(
+      '库存不足',
+    );
   });
 
   it('用户预定 2 间但库存只有 1 间，应被拒绝', async () => {

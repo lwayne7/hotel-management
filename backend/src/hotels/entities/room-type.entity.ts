@@ -10,13 +10,13 @@ import { Hotel } from './hotel.entity';
 
 export enum DiscountType {
   NONE = 'none',
-  PERCENTAGE = 'percentage',  // 百分比折扣，如8折
-  FIXED = 'fixed',            // 固定减免，如减50元
-  PACKAGE = 'package',        // 套餐优惠
+  PERCENTAGE = 'percentage', // 百分比折扣，如8折
+  FIXED = 'fixed', // 固定减免，如减50元
+  PACKAGE = 'package', // 套餐优惠
 }
 
 @Entity('room_types')
-@Index(['hotelId', 'price'])  // 按酒店查房型并按价格排序
+@Index(['hotelId', 'price']) // 按酒店查房型并按价格排序
 export class RoomType {
   @PrimaryGeneratedColumn()
   id: number;

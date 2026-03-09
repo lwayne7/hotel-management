@@ -76,8 +76,20 @@ describe('OrdersService (business closure)', () => {
 
     // 2 晚库存：03-10、03-11
     await ds.getRepository(RoomInventory).save([
-      { roomTypeId: 101, date: '2026-03-10', total: 1, reserved: 0, sold: 0 } as any,
-      { roomTypeId: 101, date: '2026-03-11', total: 1, reserved: 0, sold: 0 } as any,
+      {
+        roomTypeId: 101,
+        date: '2026-03-10',
+        total: 1,
+        reserved: 0,
+        sold: 0,
+      } as any,
+      {
+        roomTypeId: 101,
+        date: '2026-03-11',
+        total: 1,
+        reserved: 0,
+        sold: 0,
+      } as any,
     ]);
   });
 
@@ -109,7 +121,10 @@ describe('OrdersService (business closure)', () => {
     });
 
     const invRepo = ds.getRepository(RoomInventory);
-    const before = await invRepo.find({ where: { roomTypeId: 101 } as any, order: { date: 'ASC' } as any });
+    const before = await invRepo.find({
+      where: { roomTypeId: 101 } as any,
+      order: { date: 'ASC' } as any,
+    });
     expect(before.map((r) => r.reserved)).toEqual([1, 1]);
 
     const paid1 = await ordersService.confirmPaidByCallback({
@@ -119,7 +134,10 @@ describe('OrdersService (business closure)', () => {
     });
     expect(paid1.status).toBe(OrderStatus.PAID);
 
-    const after1 = await invRepo.find({ where: { roomTypeId: 101 } as any, order: { date: 'ASC' } as any });
+    const after1 = await invRepo.find({
+      where: { roomTypeId: 101 } as any,
+      order: { date: 'ASC' } as any,
+    });
     expect(after1.map((r) => r.reserved)).toEqual([0, 0]);
     expect(after1.map((r) => r.sold)).toEqual([1, 1]);
 
@@ -129,15 +147,24 @@ describe('OrdersService (business closure)', () => {
     });
     expect(paid2.status).toBe(OrderStatus.PAID);
 
-    const after2 = await invRepo.find({ where: { roomTypeId: 101 } as any, order: { date: 'ASC' } as any });
+    const after2 = await invRepo.find({
+      where: { roomTypeId: 101 } as any,
+      order: { date: 'ASC' } as any,
+    });
     expect(after2.map((r) => r.sold)).toEqual([1, 1]);
   });
 
   it('should release inventory on cancel', async () => {
     // 先补一晚库存（避免被上个用例消耗）
     const invRepo = ds.getRepository(RoomInventory);
-    await invRepo.update({ roomTypeId: 101, date: '2026-03-10' } as any, { total: 2, reserved: 0, sold: 0 } as any);
-    await invRepo.update({ roomTypeId: 101, date: '2026-03-11' } as any, { total: 2, reserved: 0, sold: 0 } as any);
+    await invRepo.update(
+      { roomTypeId: 101, date: '2026-03-10' } as any,
+      { total: 2, reserved: 0, sold: 0 } as any,
+    );
+    await invRepo.update(
+      { roomTypeId: 101, date: '2026-03-11' } as any,
+      { total: 2, reserved: 0, sold: 0 } as any,
+    );
 
     const order = await ordersService.createOrder(202, {
       hotelId: 1,
@@ -150,7 +177,10 @@ describe('OrdersService (business closure)', () => {
     const cancelled = await ordersService.cancelOrder(202, order.id);
     expect(cancelled.status).toBe(OrderStatus.CANCELLED);
 
-    const inv = await invRepo.find({ where: { roomTypeId: 101 } as any, order: { date: 'ASC' } as any });
+    const inv = await invRepo.find({
+      where: { roomTypeId: 101 } as any,
+      order: { date: 'ASC' } as any,
+    });
     expect(inv.map((r) => r.reserved)).toEqual([0, 0]);
   });
 
@@ -164,13 +194,18 @@ describe('OrdersService (business closure)', () => {
       guests: 2,
     });
     // 待支付时不允许删除
-    await expect(ordersService.deleteOrder(203, order.id)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      ordersService.deleteOrder(203, order.id),
+    ).rejects.toBeInstanceOf(ForbiddenException);
 
     // 取消后可以删除
     await ordersService.cancelOrder(203, order.id);
-    await expect(ordersService.deleteOrder(203, order.id)).resolves.toBeUndefined();
-    const left = await ds.getRepository(Order).findOne({ where: { id: order.id } });
+    await expect(
+      ordersService.deleteOrder(203, order.id),
+    ).resolves.toBeUndefined();
+    const left = await ds
+      .getRepository(Order)
+      .findOne({ where: { id: order.id } });
     expect(left).toBeNull();
   });
 });
-

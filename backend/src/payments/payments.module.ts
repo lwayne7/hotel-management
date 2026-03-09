@@ -12,4 +12,3 @@ import { OrdersModule } from '../orders/orders.module';
   providers: [PaymentsService, PaymentSignatureGuard],
 })
 export class PaymentsModule {}
-

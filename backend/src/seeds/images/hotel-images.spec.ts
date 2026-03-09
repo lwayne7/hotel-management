@@ -45,8 +45,14 @@ describe('seeds hotel images', () => {
     expect(covers.size).toBeGreaterThanOrEqual(50);
 
     // 更重要的是相邻酒店ID应该获得不同的图片
-    const adjacent = [startId, startId + 1, startId + 2, startId + 3, startId + 4];
-    const adjacentImages = adjacent.map(id => getExteriorImage(id, 0, 0));
+    const adjacent = [
+      startId,
+      startId + 1,
+      startId + 2,
+      startId + 3,
+      startId + 4,
+    ];
+    const adjacentImages = adjacent.map((id) => getExteriorImage(id, 0, 0));
     const adjacentUnique = new Set(adjacentImages).size;
     expect(adjacentUnique).toBeGreaterThanOrEqual(4); // 5个相邻ID至少4个不同图片
   });

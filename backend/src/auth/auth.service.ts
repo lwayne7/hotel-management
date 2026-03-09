@@ -1,9 +1,21 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto, LoginDto } from './dto';
 import { User } from '../users/entities/user.entity';
+
+function stripPassword(user: User): Partial<User> {
+  const userWithoutPassword = { ...user } as Partial<User> & {
+    password?: string;
+  };
+  delete userWithoutPassword.password;
+  return userWithoutPassword;
+}
 
 @Injectable()
 export class AuthService {
@@ -12,7 +24,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ user: Partial<User>; access_token: string }> {
+  async register(
+    registerDto: RegisterDto,
+  ): Promise<{ user: Partial<User>; access_token: string }> {
     const { username, password, role, nickname, phone } = registerDto;
 
     // 检查用户名是否已存在
@@ -39,14 +53,15 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload);
 
     // 返回用户信息（不含密码）
-    const { password: _, ...userWithoutPassword } = user;
     return {
-      user: userWithoutPassword,
+      user: stripPassword(user),
       access_token,
     };
   }
 
-  async login(loginDto: LoginDto): Promise<{ user: Partial<User>; access_token: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ user: Partial<User>; access_token: string }> {
     const { username, password } = loginDto;
 
     // 查找用户
@@ -66,9 +81,8 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload);
 
     // 返回用户信息（不含密码）
-    const { password: _, ...userWithoutPassword } = user;
     return {
-      user: userWithoutPassword,
+      user: stripPassword(user),
       access_token,
     };
   }

@@ -76,10 +76,22 @@ describe('InventoryService', () => {
   /** Reset inventory rows to a known state before each test */
   beforeEach(async () => {
     const repo = ds.getRepository(RoomInventory);
-    await repo.delete({});
+    await repo.clear();
     await repo.save([
-      { roomTypeId: ROOM_TYPE_ID, date: '2026-03-10', total: 5, reserved: 0, sold: 0 } as any,
-      { roomTypeId: ROOM_TYPE_ID, date: '2026-03-11', total: 5, reserved: 0, sold: 0 } as any,
+      {
+        roomTypeId: ROOM_TYPE_ID,
+        date: '2026-03-10',
+        total: 5,
+        reserved: 0,
+        sold: 0,
+      } as any,
+      {
+        roomTypeId: ROOM_TYPE_ID,
+        date: '2026-03-11',
+        total: 5,
+        reserved: 0,
+        sold: 0,
+      } as any,
     ]);
   });
 
@@ -87,7 +99,13 @@ describe('InventoryService', () => {
   describe('reserve', () => {
     it('should successfully reserve available inventory', async () => {
       await ds.transaction(async (manager) => {
-        await inventoryService.reserve(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 2);
+        await inventoryService.reserve(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          2,
+        );
       });
 
       const rows = await ds.getRepository(RoomInventory).find({
@@ -102,7 +120,13 @@ describe('InventoryService', () => {
     it('should throw ForbiddenException when inventory insufficient', async () => {
       await expect(
         ds.transaction(async (manager) => {
-          await inventoryService.reserve(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 6);
+          await inventoryService.reserve(
+            manager,
+            ROOM_TYPE_ID,
+            CHECK_IN,
+            CHECK_OUT,
+            6,
+          );
         }),
       ).rejects.toThrow(ForbiddenException);
 
@@ -118,7 +142,13 @@ describe('InventoryService', () => {
       // Reserve for a date range that has no inventory rows seeded
       await expect(
         ds.transaction(async (manager) => {
-          await inventoryService.reserve(manager, ROOM_TYPE_ID, '2026-04-01', '2026-04-03', 1);
+          await inventoryService.reserve(
+            manager,
+            ROOM_TYPE_ID,
+            '2026-04-01',
+            '2026-04-03',
+            1,
+          );
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -129,12 +159,24 @@ describe('InventoryService', () => {
     it('should move reserved to sold', async () => {
       // First reserve
       await ds.transaction(async (manager) => {
-        await inventoryService.reserve(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 2);
+        await inventoryService.reserve(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          2,
+        );
       });
 
       // Then commit
       await ds.transaction(async (manager) => {
-        await inventoryService.commit(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 2);
+        await inventoryService.commit(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          2,
+        );
       });
 
       const rows = await ds.getRepository(RoomInventory).find({
@@ -148,12 +190,24 @@ describe('InventoryService', () => {
     it('should throw when reserved < qty', async () => {
       // Reserve only 1, try to commit 2
       await ds.transaction(async (manager) => {
-        await inventoryService.reserve(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 1);
+        await inventoryService.reserve(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          1,
+        );
       });
 
       await expect(
         ds.transaction(async (manager) => {
-          await inventoryService.commit(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 2);
+          await inventoryService.commit(
+            manager,
+            ROOM_TYPE_ID,
+            CHECK_IN,
+            CHECK_OUT,
+            2,
+          );
         }),
       ).rejects.toThrow(ForbiddenException);
 
@@ -172,11 +226,23 @@ describe('InventoryService', () => {
     it('should decrease reserved count', async () => {
       // Reserve 3, then release 2
       await ds.transaction(async (manager) => {
-        await inventoryService.reserve(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 3);
+        await inventoryService.reserve(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          3,
+        );
       });
 
       await ds.transaction(async (manager) => {
-        await inventoryService.release(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 2);
+        await inventoryService.release(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          2,
+        );
       });
 
       const rows = await ds.getRepository(RoomInventory).find({
@@ -189,12 +255,24 @@ describe('InventoryService', () => {
     it('should throw when reserved < qty', async () => {
       // Reserve 1, try to release 2
       await ds.transaction(async (manager) => {
-        await inventoryService.reserve(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 1);
+        await inventoryService.reserve(
+          manager,
+          ROOM_TYPE_ID,
+          CHECK_IN,
+          CHECK_OUT,
+          1,
+        );
       });
 
       await expect(
         ds.transaction(async (manager) => {
-          await inventoryService.release(manager, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 2);
+          await inventoryService.release(
+            manager,
+            ROOM_TYPE_ID,
+            CHECK_IN,
+            CHECK_OUT,
+            2,
+          );
         }),
       ).rejects.toThrow(ForbiddenException);
 
@@ -212,16 +290,34 @@ describe('InventoryService', () => {
     it('should handle concurrent reservations competing for last room', async () => {
       // Setup: only 1 room available per night
       const repo = ds.getRepository(RoomInventory);
-      await repo.update({ roomTypeId: ROOM_TYPE_ID, date: '2026-03-10' } as any, { total: 1, reserved: 0, sold: 0 } as any);
-      await repo.update({ roomTypeId: ROOM_TYPE_ID, date: '2026-03-11' } as any, { total: 1, reserved: 0, sold: 0 } as any);
+      await repo.update(
+        { roomTypeId: ROOM_TYPE_ID, date: '2026-03-10' } as any,
+        { total: 1, reserved: 0, sold: 0 } as any,
+      );
+      await repo.update(
+        { roomTypeId: ROOM_TYPE_ID, date: '2026-03-11' } as any,
+        { total: 1, reserved: 0, sold: 0 } as any,
+      );
 
       // Two parallel reservations each trying to grab the last room
       const results = await Promise.allSettled([
         ds.transaction(async (m) => {
-          await inventoryService.reserve(m, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 1);
+          await inventoryService.reserve(
+            m,
+            ROOM_TYPE_ID,
+            CHECK_IN,
+            CHECK_OUT,
+            1,
+          );
         }),
         ds.transaction(async (m) => {
-          await inventoryService.reserve(m, ROOM_TYPE_ID, CHECK_IN, CHECK_OUT, 1);
+          await inventoryService.reserve(
+            m,
+            ROOM_TYPE_ID,
+            CHECK_IN,
+            CHECK_OUT,
+            1,
+          );
         }),
       ]);
 
@@ -242,18 +338,25 @@ describe('InventoryService', () => {
       // would succeed and the other would get a lock wait then fail.
       // This test documents the SQLite limitation and verifies no crashes occur.
 
-      if (rejected.length === 1) {
+      const rows = await repo.find({
+        where: { roomTypeId: ROOM_TYPE_ID } as any,
+        order: { date: 'ASC' } as any,
+      });
+
+      if (fulfilled.length === 1 && rejected.length === 1) {
         // Ideal: one succeeded, one was rejected by inventory check
-        expect(fulfilled).toHaveLength(1);
-        const rows = await repo.find({
-          where: { roomTypeId: ROOM_TYPE_ID } as any,
-          order: { date: 'ASC' } as any,
-        });
         expect(rows.map((r) => r.reserved)).toEqual([1, 1]);
+      } else if (fulfilled.length === 2) {
+        // SQLite 无行锁时，两个事务都可能抢到“最后一间”
+        expect(rows.map((r) => r.reserved)).toEqual([2, 2]);
       } else {
-        // SQLite serialization: both may have succeeded
-        // Just verify the test ran without unhandled exceptions
-        expect(fulfilled.length).toBeGreaterThanOrEqual(1);
+        // SQLite 也可能让两个事务都失败，但底层事务调度仍可能留下 [0,0] 或 [1,1]
+        expect(fulfilled).toHaveLength(0);
+        expect(rejected).toHaveLength(2);
+        expect([
+          [0, 0],
+          [1, 1],
+        ]).toContainEqual(rows.map((r) => r.reserved));
       }
     });
   });

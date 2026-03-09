@@ -1,15 +1,15 @@
 /**
  * 批量生成测试酒店
  * 生成 10000 家酒店用于筛选功能测试
- * 
+ *
  * 使用: npx ts-node src/seeds/scripts/generate-hotels.ts
- * 
+ *
  * 数据分布策略:
  * - 5个筛选标签均匀分布（各20%）
  * - 5个星级均匀分布（各20%）
  * - 50个城市均匀分布
  * - 价格区间合理分布
- * 
+ *
  * 性能优化:
  * - 使用事务批量提交
  * - 批量生成数据后统一插入
@@ -19,25 +19,28 @@ import 'dotenv/config';
 import path from 'path';
 import dotenv from 'dotenv';
 import {
-    createDataSource,
-    logDatabaseInfo,
-    Hotel,
-    HotelStatus,
-    RoomType,
-    HotelImage,
-    User
+  createDataSource,
+  logDatabaseInfo,
+  Hotel,
+  HotelStatus,
+  RoomType,
+  HotelImage,
+  User,
 } from '../config/database';
-import { generateHotels, printGenerationStats } from '../generators/hotel-generator';
+import {
+  generateHotels,
+  printGenerationStats,
+} from '../generators/hotel-generator';
 import { generateHotelImages } from '../images/hotel-images';
 import { ALL_CITIES } from '../config/constants';
 import { DataSource } from 'typeorm';
 
 /** 从酒店中文名解析城市索引，用于按真实 id 重新生成图片 */
 function getCityIndexFromName(nameCn: string): number {
-    for (let i = 0; i < ALL_CITIES.length; i++) {
-        if (nameCn.startsWith(ALL_CITIES[i])) return i;
-    }
-    return 0;
+  for (let i = 0; i < ALL_CITIES.length; i++) {
+    if (nameCn.startsWith(ALL_CITIES[i])) return i;
+  }
+  return 0;
 }
 
 // 加载环境变量
@@ -53,25 +56,28 @@ const TRANSACTION_SIZE = 500; // 每个事务处理的酒店数量（增大到 5
  * 格式化时间为可读字符串
  */
 function formatDuration(ms: number): string {
-    if (ms < 1000) return `${ms}ms`;
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    if (minutes === 0) return `${seconds}s`;
-    return `${minutes}m ${seconds % 60}s`;
+  if (ms < 1000) return `${ms}ms`;
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  if (minutes === 0) return `${seconds}s`;
+  return `${minutes}m ${seconds % 60}s`;
 }
 
 /**
  * 显示进度条
  */
 function showProgress(current: number, total: number, startTime: number): void {
-    const percent = Math.floor((current / total) * 100);
-    const elapsed = Date.now() - startTime;
-    const eta = current > 0 ? Math.floor((elapsed / current) * (total - current)) : 0;
-    const barLength = 30;
-    const filled = Math.floor((current / total) * barLength);
-    const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+  const percent = Math.floor((current / total) * 100);
+  const elapsed = Date.now() - startTime;
+  const eta =
+    current > 0 ? Math.floor((elapsed / current) * (total - current)) : 0;
+  const barLength = 30;
+  const filled = Math.floor((current / total) * barLength);
+  const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
 
-    process.stdout.write(`\r📊 进度: [${bar}] ${percent}% (${current}/${total}) | 耗时: ${formatDuration(elapsed)} | 预计剩余: ${formatDuration(eta)}`);
+  process.stdout.write(
+    `\r📊 进度: [${bar}] ${percent}% (${current}/${total}) | 耗时: ${formatDuration(elapsed)} | 预计剩余: ${formatDuration(eta)}`,
+  );
 }
 
 /**
@@ -80,148 +86,166 @@ function showProgress(current: number, total: number, startTime: number): void {
  * 优化后：每批 3 次 INSERT，20 批 = 60 次网络往返
  */
 async function insertHotelsBatch(
-    dataSource: DataSource,
-    hotels: ReturnType<typeof generateHotels>,
-    merchantId: number,
-    _startIndex: number
+  dataSource: DataSource,
+  hotels: ReturnType<typeof generateHotels>,
+  merchantId: number,
+  _startIndex: number,
 ): Promise<void> {
-    await dataSource.transaction(async (manager) => {
-        // ① 批量插入所有酒店，一次 INSERT 拿回所有 id
-        const hotelEntities = hotels.map((h) => {
-            const { roomTypes, images, status, ...hotelInfo } = h;
-            return { ...hotelInfo, status: HotelStatus.APPROVED, merchantId };
-        });
-
-        const hotelResult = await manager
-            .createQueryBuilder()
-            .insert()
-            .into(Hotel)
-            .values(hotelEntities)
-            .execute();
-
-        const hotelIds: number[] = hotelResult.identifiers.map((r) => r.id as number);
-
-        // ② 批量插入所有房型
-        const allRoomTypes: any[] = [];
-        for (let i = 0; i < hotels.length; i++) {
-            const hotelId = hotelIds[i];
-            for (const rt of hotels[i].roomTypes) {
-                allRoomTypes.push({ ...rt, hotelId });
-            }
-        }
-        if (allRoomTypes.length > 0) {
-            await manager
-                .createQueryBuilder()
-                .insert()
-                .into(RoomType)
-                .values(allRoomTypes)
-                .execute();
-        }
-
-        // ③ 批量插入所有图片（使用真实 hotelId 生成唯一图片）
-        const allImages: any[] = [];
-        for (let i = 0; i < hotels.length; i++) {
-            const hotelId = hotelIds[i];
-            const cityIndex = getCityIndexFromName(hotels[i].nameCn);
-            const imageCount = Math.min(4, Math.max(2, hotels[i].images.length));
-            const imagesToSave = generateHotelImages(hotelId, cityIndex, imageCount);
-            for (let j = 0; j < imagesToSave.length; j++) {
-                allImages.push({ ...imagesToSave[j], sortOrder: j, hotelId });
-            }
-        }
-        if (allImages.length > 0) {
-            // 图片数量大，分块插入避免 SQL 参数过多
-            const IMG_CHUNK = 2000;
-            for (let c = 0; c < allImages.length; c += IMG_CHUNK) {
-                await manager
-                    .createQueryBuilder()
-                    .insert()
-                    .into(HotelImage)
-                    .values(allImages.slice(c, c + IMG_CHUNK))
-                    .execute();
-            }
-        }
+  await dataSource.transaction(async (manager) => {
+    // ① 批量插入所有酒店，一次 INSERT 拿回所有 id
+    const hotelEntities = hotels.map((h) => {
+      const { roomTypes, images, status, ...hotelInfo } = h;
+      return { ...hotelInfo, status: HotelStatus.APPROVED, merchantId };
     });
+
+    const hotelResult = await manager
+      .createQueryBuilder()
+      .insert()
+      .into(Hotel)
+      .values(hotelEntities)
+      .execute();
+
+    const hotelIds: number[] = hotelResult.identifiers.map(
+      (r) => r.id as number,
+    );
+
+    // ② 批量插入所有房型
+    const allRoomTypes: any[] = [];
+    for (let i = 0; i < hotels.length; i++) {
+      const hotelId = hotelIds[i];
+      for (const rt of hotels[i].roomTypes) {
+        allRoomTypes.push({ ...rt, hotelId });
+      }
+    }
+    if (allRoomTypes.length > 0) {
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(RoomType)
+        .values(allRoomTypes)
+        .execute();
+    }
+
+    // ③ 批量插入所有图片（使用真实 hotelId 生成唯一图片）
+    const allImages: any[] = [];
+    for (let i = 0; i < hotels.length; i++) {
+      const hotelId = hotelIds[i];
+      const cityIndex = getCityIndexFromName(hotels[i].nameCn);
+      const imageCount = Math.min(4, Math.max(2, hotels[i].images.length));
+      const imagesToSave = generateHotelImages(hotelId, cityIndex, imageCount);
+      for (let j = 0; j < imagesToSave.length; j++) {
+        allImages.push({ ...imagesToSave[j], sortOrder: j, hotelId });
+      }
+    }
+    if (allImages.length > 0) {
+      // 图片数量大，分块插入避免 SQL 参数过多
+      const IMG_CHUNK = 2000;
+      for (let c = 0; c < allImages.length; c += IMG_CHUNK) {
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(HotelImage)
+          .values(allImages.slice(c, c + IMG_CHUNK))
+          .execute();
+      }
+    }
+  });
 }
 
 async function generateMassHotels() {
-    const startTime = Date.now();
-    console.log(`\n🚀 开始生成 ${TOTAL_HOTELS.toLocaleString()} 家测试酒店...\n`);
-    logDatabaseInfo();
+  const startTime = Date.now();
+  console.log(`\n🚀 开始生成 ${TOTAL_HOTELS.toLocaleString()} 家测试酒店...\n`);
+  logDatabaseInfo();
 
-    const dataSource = await createDataSource();
-    console.log('✅ 数据库连接成功\n');
+  const dataSource = await createDataSource();
+  console.log('✅ 数据库连接成功\n');
 
-    const userRepository = dataSource.getRepository(User);
-    const hotelRepository = dataSource.getRepository(Hotel);
+  const userRepository = dataSource.getRepository(User);
+  const hotelRepository = dataSource.getRepository(Hotel);
 
-    // 检查现有酒店数量
-    const existingCount = await hotelRepository.count();
-    if (existingCount >= TOTAL_HOTELS) {
-        console.log(`⚠️  数据库已有 ${existingCount.toLocaleString()} 家酒店，无需重新生成`);
-        console.log('   如需重新生成，请先清空酒店数据');
-        await dataSource.destroy();
-        return;
-    }
-
-    // 查找商户账号
-    const merchant = await userRepository.findOne({
-        where: { role: 'merchant' as any }
-    });
-
-    if (!merchant) {
-        console.error('❌ 未找到商户账号，请先运行 npm run seed');
-        await dataSource.destroy();
-        return;
-    }
-    console.log(`👤 使用商户账号: ${merchant.username} (ID: ${merchant.id})`);
-    console.log(`📦 批次大小: ${TRANSACTION_SIZE} 家/事务\n`);
-
-    // 计算需要生成的数量（扣除已有的精选酒店）
-    const toGenerate = TOTAL_HOTELS - existingCount;
-    console.log(`📝 生成 ${toGenerate.toLocaleString()} 家酒店 (已有 ${existingCount} 家)\n`);
-
-    // 生成酒店数据
-    console.log('⏳ 正在生成酒店数据...');
-    const genStart = Date.now();
-    const allHotels = generateHotels({ count: toGenerate, startIndex: existingCount });
-    console.log(`✓ 数据生成完成，耗时 ${formatDuration(Date.now() - genStart)}\n`);
-
-    // 批量插入
-    let createdCount = 0;
-    const totalBatches = Math.ceil(toGenerate / TRANSACTION_SIZE);
-    const insertStart = Date.now();
-
-    console.log('⏳ 正在写入数据库...');
-    for (let batch = 0; batch < totalBatches; batch++) {
-        const start = batch * TRANSACTION_SIZE;
-        const end = Math.min(start + TRANSACTION_SIZE, toGenerate);
-        const batchHotels = allHotels.slice(start, end);
-
-        try {
-            await insertHotelsBatch(dataSource, batchHotels, merchant.id, existingCount + start);
-            createdCount += batchHotels.length;
-            showProgress(createdCount, toGenerate, insertStart);
-        } catch (error) {
-            console.error(`\n❌ 批次 ${batch + 1} 插入失败:`, error);
-            throw error;
-        }
-    }
-
-    console.log('\n\n✅ 数据库写入完成\n');
-
-    // 打印统计
-    printGenerationStats(allHotels);
-
-    const totalTime = Date.now() - startTime;
-    console.log(`\n🎉 生成完成！总耗时: ${formatDuration(totalTime)}`);
-    console.log(`   平均速度: ${Math.floor(toGenerate / (totalTime / 1000))} 家/秒`);
-
-    // 验证最终数量
-    const finalCount = await hotelRepository.count();
-    console.log(`   数据库酒店总数: ${finalCount.toLocaleString()} 家`);
-
+  // 检查现有酒店数量
+  const existingCount = await hotelRepository.count();
+  if (existingCount >= TOTAL_HOTELS) {
+    console.log(
+      `⚠️  数据库已有 ${existingCount.toLocaleString()} 家酒店，无需重新生成`,
+    );
+    console.log('   如需重新生成，请先清空酒店数据');
     await dataSource.destroy();
+    return;
+  }
+
+  // 查找商户账号
+  const merchant = await userRepository.findOne({
+    where: { role: 'merchant' as any },
+  });
+
+  if (!merchant) {
+    console.error('❌ 未找到商户账号，请先运行 npm run seed');
+    await dataSource.destroy();
+    return;
+  }
+  console.log(`👤 使用商户账号: ${merchant.username} (ID: ${merchant.id})`);
+  console.log(`📦 批次大小: ${TRANSACTION_SIZE} 家/事务\n`);
+
+  // 计算需要生成的数量（扣除已有的精选酒店）
+  const toGenerate = TOTAL_HOTELS - existingCount;
+  console.log(
+    `📝 生成 ${toGenerate.toLocaleString()} 家酒店 (已有 ${existingCount} 家)\n`,
+  );
+
+  // 生成酒店数据
+  console.log('⏳ 正在生成酒店数据...');
+  const genStart = Date.now();
+  const allHotels = generateHotels({
+    count: toGenerate,
+    startIndex: existingCount,
+  });
+  console.log(
+    `✓ 数据生成完成，耗时 ${formatDuration(Date.now() - genStart)}\n`,
+  );
+
+  // 批量插入
+  let createdCount = 0;
+  const totalBatches = Math.ceil(toGenerate / TRANSACTION_SIZE);
+  const insertStart = Date.now();
+
+  console.log('⏳ 正在写入数据库...');
+  for (let batch = 0; batch < totalBatches; batch++) {
+    const start = batch * TRANSACTION_SIZE;
+    const end = Math.min(start + TRANSACTION_SIZE, toGenerate);
+    const batchHotels = allHotels.slice(start, end);
+
+    try {
+      await insertHotelsBatch(
+        dataSource,
+        batchHotels,
+        merchant.id,
+        existingCount + start,
+      );
+      createdCount += batchHotels.length;
+      showProgress(createdCount, toGenerate, insertStart);
+    } catch (error) {
+      console.error(`\n❌ 批次 ${batch + 1} 插入失败:`, error);
+      throw error;
+    }
+  }
+
+  console.log('\n\n✅ 数据库写入完成\n');
+
+  // 打印统计
+  printGenerationStats(allHotels);
+
+  const totalTime = Date.now() - startTime;
+  console.log(`\n🎉 生成完成！总耗时: ${formatDuration(totalTime)}`);
+  console.log(
+    `   平均速度: ${Math.floor(toGenerate / (totalTime / 1000))} 家/秒`,
+  );
+
+  // 验证最终数量
+  const finalCount = await hotelRepository.count();
+  console.log(`   数据库酒店总数: ${finalCount.toLocaleString()} 家`);
+
+  await dataSource.destroy();
 }
 
 generateMassHotels().catch(console.error);

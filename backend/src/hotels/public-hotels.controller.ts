@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, ParseIntPipe, Sse, MessageEvent, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  ParseIntPipe,
+  Sse,
+  MessageEvent,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { Observable, map } from 'rxjs';
@@ -25,12 +34,42 @@ export class PublicHotelsController {
   @ApiQuery({ name: 'minPrice', required: false, type: Number })
   @ApiQuery({ name: 'maxPrice', required: false, type: Number })
   @ApiQuery({ name: 'sortBy', required: false, type: String })
-  @ApiQuery({ name: 'accommodationType', required: false, type: String, description: '住宿类型筛选，逗号分隔' })
-  @ApiQuery({ name: 'facilities', required: false, type: String, description: '设施筛选，逗号分隔' })
-  @ApiQuery({ name: 'brands', required: false, type: String, description: '品牌筛选，逗号分隔' })
-  @ApiQuery({ name: 'hotelFeatures', required: false, type: String, description: '酒店特色，逗号分隔' })
-  @ApiQuery({ name: 'roomFeatures', required: false, type: String, description: '房间特色，逗号分隔' })
-  @ApiQuery({ name: 'tags', required: false, type: String, description: '热门标签筛选，逗号分隔' })
+  @ApiQuery({
+    name: 'accommodationType',
+    required: false,
+    type: String,
+    description: '住宿类型筛选，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'facilities',
+    required: false,
+    type: String,
+    description: '设施筛选，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'brands',
+    required: false,
+    type: String,
+    description: '品牌筛选，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'hotelFeatures',
+    required: false,
+    type: String,
+    description: '酒店特色，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'roomFeatures',
+    required: false,
+    type: String,
+    description: '房间特色，逗号分隔',
+  })
+  @ApiQuery({
+    name: 'tags',
+    required: false,
+    type: String,
+    description: '热门标签筛选，逗号分隔',
+  })
   async list(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -55,12 +94,36 @@ export class PublicHotelsController {
     if (minPrice != null) filters.minPrice = parseFloat(minPrice);
     if (maxPrice != null) filters.maxPrice = parseFloat(maxPrice);
     if (sortBy) filters.sortBy = sortBy;
-    if (accommodationType) filters.accommodationType = accommodationType.split(',').map((s) => s.trim()).filter(Boolean);
-    if (facilities) filters.facilities = facilities.split(',').map((s) => s.trim()).filter(Boolean);
-    if (brands) filters.brands = brands.split(',').map((s) => s.trim()).filter(Boolean);
-    if (hotelFeatures) filters.hotelFeatures = hotelFeatures.split(',').map((s) => s.trim()).filter(Boolean);
-    if (roomFeatures) filters.roomFeatures = roomFeatures.split(',').map((s) => s.trim()).filter(Boolean);
-    if (tags) filters.tags = tags.split(',').map((s) => s.trim()).filter(Boolean);
+    if (accommodationType)
+      filters.accommodationType = accommodationType
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (facilities)
+      filters.facilities = facilities
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (brands)
+      filters.brands = brands
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (hotelFeatures)
+      filters.hotelFeatures = hotelFeatures
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (roomFeatures)
+      filters.roomFeatures = roomFeatures
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (tags)
+      filters.tags = tags
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
 
     const pageNum = parseInt(page ?? '1', 10) || 1;
     const pageSizeNum = parseInt(pageSize ?? '10', 10) || 10;
@@ -77,9 +140,9 @@ export class PublicHotelsController {
       '实时价格更新推送（SSE）。事件字段：type、timestamp、hotelId?、changeKind、version?',
   })
   priceUpdates(): Observable<MessageEvent> {
-    return this.priceUpdatesService.stream().pipe(
-      map((event) => ({ data: event } as MessageEvent)),
-    );
+    return this.priceUpdatesService
+      .stream()
+      .pipe(map((event) => ({ data: event }) as MessageEvent));
   }
 
   @Get(':id')

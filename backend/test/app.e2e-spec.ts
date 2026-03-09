@@ -20,9 +20,9 @@ describe('AppController (e2e)', () => {
     }
   });
 
-  it('/api/healthz (GET)', () => {
+  it('/api/v1/healthz (GET)', () => {
     return request(app.getHttpServer())
-      .get('/api/healthz')
+      .get('/api/v1/healthz')
       .expect(200)
       .expect(({ body }) => {
         expect(body.status).toBe('ok');

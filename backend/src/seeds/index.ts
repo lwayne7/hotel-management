@@ -13,7 +13,10 @@ export { SEED_USERS, printUserCredentials } from './data/users';
 export { FEATURED_HOTELS } from './data/featured-hotels';
 
 // 生成器
-export { generateHotels, printGenerationStats } from './generators/hotel-generator';
+export {
+  generateHotels,
+  printGenerationStats,
+} from './generators/hotel-generator';
 
 // 图片
 export * from './images/hotel-images';

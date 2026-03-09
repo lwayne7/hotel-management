@@ -15,7 +15,10 @@ function addDays(dateStr: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function eachDateNightsInclusiveStartExclusiveEnd(checkIn: string, checkOut: string): string[] {
+function eachDateNightsInclusiveStartExclusiveEnd(
+  checkIn: string,
+  checkOut: string,
+): string[] {
   const start = toDateOnlyString(checkIn);
   const end = toDateOnlyString(checkOut);
   const dates: string[] = [];
@@ -40,7 +43,10 @@ export class InventoryService {
     qty: number,
     opts?: { lock?: boolean },
   ): Promise<void> {
-    const dates = eachDateNightsInclusiveStartExclusiveEnd(checkInDate, checkOutDate);
+    const dates = eachDateNightsInclusiveStartExclusiveEnd(
+      checkInDate,
+      checkOutDate,
+    );
     if (dates.length === 0) {
       throw new ForbiddenException('入住日期范围不合法');
     }
@@ -80,7 +86,10 @@ export class InventoryService {
     qty: number,
     opts?: { lock?: boolean },
   ): Promise<void> {
-    const dates = eachDateNightsInclusiveStartExclusiveEnd(checkInDate, checkOutDate);
+    const dates = eachDateNightsInclusiveStartExclusiveEnd(
+      checkInDate,
+      checkOutDate,
+    );
     const repo = manager.getRepository(RoomInventory);
 
     const qb = repo
@@ -94,7 +103,9 @@ export class InventoryService {
     }
     for (const r of rows) {
       if (r.reserved < qty) {
-        throw new ForbiddenException(`预占库存不足（${r.date} reserved=${r.reserved}）`);
+        throw new ForbiddenException(
+          `预占库存不足（${r.date} reserved=${r.reserved}）`,
+        );
       }
     }
     for (const r of rows) {
@@ -115,7 +126,10 @@ export class InventoryService {
     qty: number,
     opts?: { lock?: boolean },
   ): Promise<void> {
-    const dates = eachDateNightsInclusiveStartExclusiveEnd(checkInDate, checkOutDate);
+    const dates = eachDateNightsInclusiveStartExclusiveEnd(
+      checkInDate,
+      checkOutDate,
+    );
     const repo = manager.getRepository(RoomInventory);
     const qb = repo
       .createQueryBuilder('inv')
@@ -128,7 +142,9 @@ export class InventoryService {
     }
     for (const r of rows) {
       if (r.reserved < qty) {
-        throw new ForbiddenException(`释放失败（${r.date} reserved=${r.reserved}）`);
+        throw new ForbiddenException(
+          `释放失败（${r.date} reserved=${r.reserved}）`,
+        );
       }
     }
     for (const r of rows) {
@@ -137,4 +153,3 @@ export class InventoryService {
     await repo.save(rows);
   }
 }
-

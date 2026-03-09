@@ -8,6 +8,7 @@ afterEach(() => {
 
 beforeEach(() => {
   sessionStorage.clear();
+  localStorage.clear();
 
   Object.defineProperty(window, 'matchMedia', {
     writable: true,

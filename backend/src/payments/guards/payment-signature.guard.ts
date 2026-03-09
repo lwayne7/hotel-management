@@ -44,11 +44,13 @@ export class PaymentSignatureGuard implements CanActivate {
       return true;
     }
 
-    const signature = request.headers['x-payment-signature'] as string;
-    const timestamp = request.headers['x-payment-timestamp'] as string;
+    const signature = readHeader(request, 'x-payment-signature');
+    const timestamp = readHeader(request, 'x-payment-timestamp');
 
     if (!signature || !timestamp) {
-      throw new ForbiddenException('缺少支付签名头 (x-payment-signature, x-payment-timestamp)');
+      throw new ForbiddenException(
+        '缺少支付签名头 (x-payment-signature, x-payment-timestamp)',
+      );
     }
 
     // 检查时间戳窗口（防重放攻击）：5 分钟内有效
@@ -58,7 +60,7 @@ export class PaymentSignatureGuard implements CanActivate {
     }
 
     // 计算期望签名：HMAC-SHA256(timestamp + "." + JSON.stringify(body))
-    const payload = `${timestamp}.${JSON.stringify(request.body)}`;
+    const payload = `${timestamp}.${JSON.stringify(request.body ?? {})}`;
     const expected = createHmac('sha256', this.paymentSecret)
       .update(payload)
       .digest('hex');
@@ -73,6 +75,14 @@ export class PaymentSignatureGuard implements CanActivate {
 }
 
 /** 固定时间字符串比较 */
+function readHeader(request: Request, name: string): string | null {
+  const value = request.headers[name];
+  if (typeof value === 'string' && value.trim()) return value;
+  if (Array.isArray(value) && typeof value[0] === 'string' && value[0].trim())
+    return value[0];
+  return null;
+}
+
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let result = 0;

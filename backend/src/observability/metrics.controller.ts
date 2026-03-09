@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Header, Logger, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Header,
+  Logger,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { MetricsService } from './metrics.service';
 
@@ -38,7 +47,11 @@ export class MetricsController {
         `[WebVitals] ${metric.name}=${metric.value.toFixed(1)} rating=${metric.rating ?? 'n/a'}`,
       );
       // 将 Web Vitals 数据注入 Prometheus metrics（可选，如需要更精细的监控）
-      this.metricsService.observeWebVital(metric.name, metric.value, metric.rating);
+      this.metricsService.observeWebVital(
+        metric.name,
+        metric.value,
+        metric.rating,
+      );
     }
   }
 }

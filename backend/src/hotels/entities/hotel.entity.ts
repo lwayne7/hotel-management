@@ -10,18 +10,20 @@ import {
   Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { RoomType } from './room-type.entity';
+import { HotelImage } from './hotel-image.entity';
 
 export enum HotelStatus {
-  DRAFT = 'draft',           // 草稿
-  PENDING = 'pending',       // 待审核
-  APPROVED = 'approved',     // 已通过（已发布）
-  REJECTED = 'rejected',     // 已驳回
-  OFFLINE = 'offline',       // 已下线
+  DRAFT = 'draft', // 草稿
+  PENDING = 'pending', // 待审核
+  APPROVED = 'approved', // 已通过（已发布）
+  REJECTED = 'rejected', // 已驳回
+  OFFLINE = 'offline', // 已下线
 }
 
 @Entity('hotels')
-@Index(['status', 'updatedAt'])       // 按状态+时间查询（公开列表、管理列表）
-@Index(['merchantId', 'status'])      // 商户查自己的酒店
+@Index(['status', 'updatedAt']) // 按状态+时间查询（公开列表、管理列表）
+@Index(['merchantId', 'status']) // 商户查自己的酒店
 export class Hotel {
   @PrimaryGeneratedColumn()
   id: number;
@@ -70,11 +72,11 @@ export class Hotel {
   @JoinColumn({ name: 'merchantId' })
   merchant: User;
 
-  @OneToMany('RoomType', 'hotel', { cascade: true })
-  roomTypes: any[];
+  @OneToMany(() => RoomType, (roomType) => roomType.hotel, { cascade: true })
+  roomTypes: RoomType[];
 
-  @OneToMany('HotelImage', 'hotel', { cascade: true })
-  images: any[];
+  @OneToMany(() => HotelImage, (image) => image.hotel, { cascade: true })
+  images: HotelImage[];
 
   @CreateDateColumn()
   createdAt: Date;

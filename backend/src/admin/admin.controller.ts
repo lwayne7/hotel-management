@@ -51,7 +51,11 @@ export class AdminController {
     @Query('pageSize') pageSize?: number,
     @Query('status') status?: HotelStatus,
   ) {
-    return this.hotelsService.findAllForAdmin(page || 1, pageSize || 10, status);
+    return this.hotelsService.findAllForAdmin(
+      page || 1,
+      pageSize || 10,
+      status,
+    );
   }
 
   @Get('hotels/:id')
@@ -62,7 +66,10 @@ export class AdminController {
 
   @Post('hotels/:id/approve')
   @ApiOperation({ summary: '审核通过' })
-  async approve(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: { id: number }) {
+  async approve(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { id: number },
+  ) {
     const hotel = await this.hotelsService.approve(id);
     await this.auditService.log(
       { actorType: 'admin', actorId: user.id },
@@ -98,7 +105,10 @@ export class AdminController {
 
   @Post('hotels/:id/offline')
   @ApiOperation({ summary: '下线酒店' })
-  async offline(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: { id: number }) {
+  async offline(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { id: number },
+  ) {
     const hotel = await this.hotelsService.offline(id);
     await this.auditService.log(
       { actorType: 'admin', actorId: user.id },
@@ -113,7 +123,10 @@ export class AdminController {
 
   @Post('hotels/:id/online')
   @ApiOperation({ summary: '恢复上线' })
-  async online(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: { id: number }) {
+  async online(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { id: number },
+  ) {
     const hotel = await this.hotelsService.online(id);
     await this.auditService.log(
       { actorType: 'admin', actorId: user.id },

@@ -1,7 +1,10 @@
 /**
  * 无图时按 hotelId 选一张外观图，与 seeds 图库 HOTEL_EXTERIOR_IMAGES 对齐，避免遗漏或风格不一
  */
-import { getExteriorImage, HOTEL_EXTERIOR_IMAGES } from '../../seeds/images/hotel-images';
+import {
+  getExteriorImage,
+  HOTEL_EXTERIOR_IMAGES,
+} from '../../seeds/images/hotel-images';
 
 export const PLACEHOLDER_EXTERIOR_URLS = [...HOTEL_EXTERIOR_IMAGES];
 

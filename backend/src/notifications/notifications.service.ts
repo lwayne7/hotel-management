@@ -38,7 +38,9 @@ export class NotificationsService {
   ): Promise<void> {
     const users = await this.userRepo.find({ where: { role }, select: ['id'] });
     if (users.length === 0) return;
-    const entities = users.map((u) => this.repo.create({ ...data, targetUserId: u.id }));
+    const entities = users.map((u) =>
+      this.repo.create({ ...data, targetUserId: u.id }),
+    );
     await this.repo.save(entities);
   }
 
@@ -51,6 +53,9 @@ export class NotificationsService {
   }
 
   async markAllRead(userId: number): Promise<void> {
-    await this.repo.update({ targetUserId: userId, isRead: false }, { isRead: true });
+    await this.repo.update(
+      { targetUserId: userId, isRead: false },
+      { isRead: true },
+    );
   }
 }

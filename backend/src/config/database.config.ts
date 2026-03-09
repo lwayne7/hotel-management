@@ -29,12 +29,12 @@ export default registerAs('database', () => {
     const conn = databaseUrl
       ? parseDatabaseUrl(databaseUrl)
       : {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432', 10),
-        username: process.env.DB_USERNAME || 'postgres',
-        password: process.env.DB_PASSWORD || 'postgres',
-        database: process.env.DB_DATABASE || 'hotel_management',
-      };
+          host: process.env.DB_HOST || 'localhost',
+          port: parseInt(process.env.DB_PORT || '5432', 10),
+          username: process.env.DB_USERNAME || 'postgres',
+          password: process.env.DB_PASSWORD || 'postgres',
+          database: process.env.DB_DATABASE || 'hotel_management',
+        };
     const isRemote = conn.host !== 'localhost' && conn.host !== '127.0.0.1';
     return {
       type: 'postgres',
@@ -47,7 +47,9 @@ export default registerAs('database', () => {
 
   return {
     type: 'better-sqlite3',
-    database: resolveSqliteDatabasePath(process.env.DB_DATABASE || 'hotel_management.sqlite'),
+    database: resolveSqliteDatabasePath(
+      process.env.DB_DATABASE || 'hotel_management.sqlite',
+    ),
     synchronize: !isProd,
     logging: !isProd && !isTest,
   };

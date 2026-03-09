@@ -20,7 +20,10 @@ export class CreateOrderDto {
   @IsDateString()
   checkInDate: string;
 
-  @ApiProperty({ description: '离店日期（YYYY-MM-DD，需大于入住日期）', example: '2026-03-12' })
+  @ApiProperty({
+    description: '离店日期（YYYY-MM-DD，需大于入住日期）',
+    example: '2026-03-12',
+  })
   @IsNotEmpty()
   @IsDateString()
   checkOutDate: string;
@@ -37,4 +40,3 @@ export class CreateOrderDto {
   @Min(1)
   guests: number;
 }
-

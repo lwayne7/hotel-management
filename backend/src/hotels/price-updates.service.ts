@@ -34,7 +34,10 @@ export class PriceUpdatesService {
     );
   }
 
-  private buildEvent(changeKind: HotelPriceChangeKind, hotelId?: number): HotelPriceUpdateEvent {
+  private buildEvent(
+    changeKind: HotelPriceChangeKind,
+    hotelId?: number,
+  ): HotelPriceUpdateEvent {
     return {
       type: 'hotel_price_update',
       timestamp: Date.now(),

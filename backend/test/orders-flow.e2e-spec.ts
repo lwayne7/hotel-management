@@ -1,7 +1,11 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { createE2EApp, seedE2EData, type E2ESeedResult } from './helpers/e2e-app';
+import {
+  createE2EApp,
+  seedE2EData,
+  type E2ESeedResult,
+} from './helpers/e2e-app';
 
 describe('Orders & Payments flow (e2e)', () => {
   let app: INestApplication;
@@ -26,7 +30,7 @@ describe('Orders & Payments flow (e2e)', () => {
 
   it('should create order, pay by callback and see it in my orders', async () => {
     const createOrderRes = await request(server)
-      .post('/api/orders')
+      .post('/api/v1/orders')
       .set('Authorization', `Bearer ${seeded.customerToken}`)
       .send({
         hotelId: seeded.hotelId,
@@ -44,7 +48,7 @@ describe('Orders & Payments flow (e2e)', () => {
     // 3) 模拟支付回调
     const eventId = `evt_test_${Date.now()}`;
     await request(server)
-      .post('/api/payments/callback')
+      .post('/api/v1/payments/callback')
       .send({
         eventId,
         orderId,
@@ -53,11 +57,13 @@ describe('Orders & Payments flow (e2e)', () => {
       .expect(201);
 
     const myOrdersRes = await request(server)
-      .get('/api/orders/mine')
+      .get('/api/v1/orders/mine')
       .set('Authorization', `Bearer ${seeded.customerToken}`)
       .expect(200);
 
-    const order = (myOrdersRes.body.data as any[]).find((o) => o.id === orderId);
+    const order = (myOrdersRes.body.data as any[]).find(
+      (o) => o.id === orderId,
+    );
     expect(order).toBeDefined();
     expect(order.status).toBe('paid');
   });

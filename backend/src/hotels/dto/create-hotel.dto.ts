@@ -36,7 +36,11 @@ class CreateRoomTypeDto {
   @Min(0)
   originalPrice?: number;
 
-  @ApiPropertyOptional({ description: '折扣类型', enum: DiscountType, example: DiscountType.PERCENTAGE })
+  @ApiPropertyOptional({
+    description: '折扣类型',
+    enum: DiscountType,
+    example: DiscountType.PERCENTAGE,
+  })
   @IsOptional()
   @IsEnum(DiscountType)
   discountType?: DiscountType;
@@ -54,7 +58,9 @@ class CreateRoomTypeDto {
 
   @ApiPropertyOptional({ description: '最大入住人数', example: 2 })
   @IsOptional()
-  @Transform(({ value }) => (value == null ? undefined : Math.round(Number(value))))
+  @Transform(({ value }) =>
+    value == null ? undefined : Math.round(Number(value)),
+  )
   @IsInt()
   @Min(1)
   maxGuests?: number;
@@ -66,11 +72,16 @@ class CreateRoomTypeDto {
 
   @ApiPropertyOptional({ description: '房间面积(平方米)', example: 35 })
   @IsOptional()
-  @Transform(({ value }) => (value == null ? undefined : Math.round(Number(value))))
+  @Transform(({ value }) =>
+    value == null ? undefined : Math.round(Number(value)),
+  )
   @IsInt()
   roomSize?: number;
 
-  @ApiPropertyOptional({ description: '房间设施', example: ['WiFi', '空调', '电视'] })
+  @ApiPropertyOptional({
+    description: '房间设施',
+    example: ['WiFi', '空调', '电视'],
+  })
   @IsOptional()
   @IsArray()
   amenities?: string[];
@@ -100,13 +111,19 @@ export class CreateHotelDto {
   @MaxLength(100)
   nameCn: string;
 
-  @ApiPropertyOptional({ description: '酒店英文名', example: 'Beijing Hilton Hotel' })
+  @ApiPropertyOptional({
+    description: '酒店英文名',
+    example: 'Beijing Hilton Hotel',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   nameEn?: string;
 
-  @ApiProperty({ description: '酒店地址', example: '北京市朝阳区东三环北路8号' })
+  @ApiProperty({
+    description: '酒店地址',
+    example: '北京市朝阳区东三环北路8号',
+  })
   @IsString()
   @IsNotEmpty({ message: '酒店地址不能为空' })
   @MaxLength(255)
@@ -128,7 +145,10 @@ export class CreateHotelDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ description: '酒店设施', example: ['游泳池', '健身房', '停车场'] })
+  @ApiPropertyOptional({
+    description: '酒店设施',
+    example: ['游泳池', '健身房', '停车场'],
+  })
   @IsOptional()
   @IsArray()
   facilities?: string[];
@@ -138,7 +158,10 @@ export class CreateHotelDto {
   @IsArray()
   nearbyAttractions?: string[];
 
-  @ApiPropertyOptional({ description: '交通信息', example: ['地铁10号线', '机场大巴'] })
+  @ApiPropertyOptional({
+    description: '交通信息',
+    example: ['地铁10号线', '机场大巴'],
+  })
   @IsOptional()
   @IsArray()
   transportation?: string[];

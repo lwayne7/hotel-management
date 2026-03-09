@@ -10,4 +10,3 @@ import { LoggingInterceptor } from './logging.interceptor';
   exports: [MetricsService, LoggingInterceptor],
 })
 export class ObservabilityModule {}
-

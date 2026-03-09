@@ -13,16 +13,21 @@ import { getPlaceholderImageUrl } from './constants/placeholder-images';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { PriceUpdatesService } from './price-updates.service';
 
+type HotelWithCover = Hotel & { coverImageUrl?: string };
+type MerchantWithPassword = Omit<Hotel['merchant'], 'password'> & {
+  password?: string;
+};
+
 function toNumber(value: unknown): number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') return Number(value);
   return Number.NaN;
 }
 
-function sortRoomTypesByPrice(roomTypes: unknown[]): void {
-  roomTypes.sort((a: unknown, b: unknown) => {
-    const aPrice = toNumber((a as { price?: unknown })?.price);
-    const bPrice = toNumber((b as { price?: unknown })?.price);
+function sortRoomTypesByPrice(roomTypes: RoomType[]): void {
+  roomTypes.sort((a, b) => {
+    const aPrice = toNumber(a.price);
+    const bPrice = toNumber(b.price);
     if (Number.isNaN(aPrice) && Number.isNaN(bPrice)) return 0;
     if (Number.isNaN(aPrice)) return 1;
     if (Number.isNaN(bPrice)) return -1;
@@ -30,16 +35,8 @@ function sortRoomTypesByPrice(roomTypes: unknown[]): void {
   });
 }
 
-function sortImagesByOrder(images: unknown[]): void {
-  images.sort((a: unknown, b: unknown) => {
-    const aOrder = typeof (a as { sortOrder?: number })?.sortOrder === 'number'
-      ? (a as { sortOrder: number }).sortOrder
-      : Number((a as { sortOrder?: unknown })?.sortOrder ?? 0);
-    const bOrder = typeof (b as { sortOrder?: number })?.sortOrder === 'number'
-      ? (b as { sortOrder: number }).sortOrder
-      : Number((b as { sortOrder?: unknown })?.sortOrder ?? 0);
-    return aOrder - bOrder;
-  });
+function sortImagesByOrder(images: HotelImage[]): void {
+  images.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 const ACCOMMODATION_TYPE_KEYWORDS: Record<string, string[]> = {
@@ -51,18 +48,36 @@ const ACCOMMODATION_TYPE_KEYWORDS: Record<string, string[]> = {
 };
 
 /** 确保酒店有主图：无图时用房型图或占位图，并设置 coverImageUrl */
-function ensureCoverImage(hotel: Hotel & { coverImageUrl?: string }): void {
-  const hasValidImage = Array.isArray(hotel.images) &&
-    hotel.images.some((img: { imageUrl?: string }) => img?.imageUrl?.trim?.());
+function ensureCoverImage(hotel: HotelWithCover): void {
+  const hasValidImage =
+    Array.isArray(hotel.images) &&
+    hotel.images.some((img) => Boolean(img.imageUrl?.trim()));
   if (!hasValidImage && Array.isArray(hotel.roomTypes)) {
-    const first = hotel.roomTypes.find((r: { imageUrl?: string }) => r?.imageUrl?.trim?.());
+    const first = hotel.roomTypes.find((roomType) =>
+      Boolean(roomType.imageUrl?.trim()),
+    );
     if (first?.imageUrl?.trim?.()) {
-      hotel.images = [{ id: 0, imageUrl: first.imageUrl.trim(), description: '房型', sortOrder: 0 } as HotelImage];
+      hotel.images = [
+        {
+          id: 0,
+          imageUrl: first.imageUrl.trim(),
+          description: '房型',
+          sortOrder: 0,
+        } as HotelImage,
+      ];
     }
   }
-  if (!Array.isArray(hotel.images) || !hotel.images.some((img: { imageUrl?: string }) => img?.imageUrl?.trim?.())) {
+  if (
+    !Array.isArray(hotel.images) ||
+    !hotel.images.some((img) => Boolean(img.imageUrl?.trim()))
+  ) {
     hotel.images = [
-      { id: 0, imageUrl: getPlaceholderImageUrl(hotel.id), description: '酒店外观', sortOrder: 0 } as HotelImage,
+      {
+        id: 0,
+        imageUrl: getPlaceholderImageUrl(hotel.id),
+        description: '酒店外观',
+        sortOrder: 0,
+      } as HotelImage,
     ];
   }
   const firstImage = hotel.images?.[0];
@@ -87,12 +102,15 @@ export class HotelsService {
   private normalizeHotel(hotel: Hotel): Hotel {
     if (Array.isArray(hotel.roomTypes)) sortRoomTypesByPrice(hotel.roomTypes);
     if (Array.isArray(hotel.images)) sortImagesByOrder(hotel.images);
-    ensureCoverImage(hotel as Hotel & { coverImageUrl?: string });
+    ensureCoverImage(hotel as HotelWithCover);
     return hotel;
   }
 
   // 创建酒店
-  async create(createHotelDto: CreateHotelDto, merchantId: number): Promise<Hotel> {
+  async create(
+    createHotelDto: CreateHotelDto,
+    merchantId: number,
+  ): Promise<Hotel> {
     const { roomTypes, images, ...hotelData } = createHotelDto;
 
     // 创建酒店
@@ -219,7 +237,9 @@ export class HotelsService {
     const { roomTypes, images, ...hotelData } = updateHotelDto;
 
     // 已发布或已下线的酒店编辑后需要重新审核
-    const needsReReview = [HotelStatus.APPROVED, HotelStatus.OFFLINE].includes(hotel.status);
+    const needsReReview = [HotelStatus.APPROVED, HotelStatus.OFFLINE].includes(
+      hotel.status,
+    );
 
     await this.dataSource.transaction(async (manager) => {
       const hotelRepo = manager.getRepository(Hotel);
@@ -273,9 +293,15 @@ export class HotelsService {
       });
     }
 
-    if (prevStatus === HotelStatus.APPROVED && hotel.status !== HotelStatus.APPROVED) {
+    if (
+      prevStatus === HotelStatus.APPROVED &&
+      hotel.status !== HotelStatus.APPROVED
+    ) {
       this.priceUpdatesService.emit('hotel_hidden', id);
-    } else if (hotel.status === HotelStatus.APPROVED && roomTypes !== undefined) {
+    } else if (
+      hotel.status === HotelStatus.APPROVED &&
+      roomTypes !== undefined
+    ) {
       this.priceUpdatesService.emit('price_changed', id);
     } else if (hotel.status === HotelStatus.APPROVED) {
       this.priceUpdatesService.emit('hotel_updated', id);
@@ -359,7 +385,7 @@ export class HotelsService {
     data.forEach((hotel) => {
       this.normalizeHotel(hotel);
       if (hotel.merchant) {
-        delete (hotel.merchant as any).password;
+        delete (hotel.merchant as MerchantWithPassword).password;
       }
     });
 
@@ -464,23 +490,35 @@ export class HotelsService {
   /** 按状态统计酒店数量（用于商户端与管理员端） */
   private async countByStatus(where: { merchantId?: number } = {}) {
     const [draft, pending, approved, rejected, offline] = await Promise.all([
-      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.DRAFT } }),
-      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.PENDING } }),
-      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.APPROVED } }),
-      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.REJECTED } }),
-      this.hotelsRepository.count({ where: { ...where, status: HotelStatus.OFFLINE } }),
+      this.hotelsRepository.count({
+        where: { ...where, status: HotelStatus.DRAFT },
+      }),
+      this.hotelsRepository.count({
+        where: { ...where, status: HotelStatus.PENDING },
+      }),
+      this.hotelsRepository.count({
+        where: { ...where, status: HotelStatus.APPROVED },
+      }),
+      this.hotelsRepository.count({
+        where: { ...where, status: HotelStatus.REJECTED },
+      }),
+      this.hotelsRepository.count({
+        where: { ...where, status: HotelStatus.OFFLINE },
+      }),
     ]);
     return { draft, pending, approved, rejected, offline };
   }
 
   async getMerchantStatistics(merchantId: number) {
-    const { draft, pending, approved, rejected, offline } = await this.countByStatus({ merchantId });
+    const { draft, pending, approved, rejected, offline } =
+      await this.countByStatus({ merchantId });
     const total = draft + pending + approved + rejected + offline;
     return { total, pending, approved, rejected, draft };
   }
 
   async getAdminStatistics() {
-    const { draft, pending, approved, rejected, offline } = await this.countByStatus();
+    const { draft, pending, approved, rejected, offline } =
+      await this.countByStatus();
     const total = draft + pending + approved + rejected + offline;
     return { total, pending, approved, rejected, offline };
   }
@@ -515,10 +553,14 @@ export class HotelsService {
     // 默认按更新时间排序，但可以根据 sortBy 参数改变
     if (filters?.sortBy === 'price') {
       // 按价格排序（从低到高）
-      query.orderBy('roomTypes.price', 'ASC', 'NULLS LAST').addOrderBy('hotel.updatedAt', 'DESC');
+      query
+        .orderBy('roomTypes.price', 'ASC', 'NULLS LAST')
+        .addOrderBy('hotel.updatedAt', 'DESC');
     } else if (filters?.sortBy === 'popular' || filters?.sortBy === 'smart') {
       // 智能排序/按欢迎度排序（使用星级和更新时间）
-      query.orderBy('hotel.starRating', 'DESC').addOrderBy('hotel.updatedAt', 'DESC');
+      query
+        .orderBy('hotel.starRating', 'DESC')
+        .addOrderBy('hotel.updatedAt', 'DESC');
     } else if (filters?.sortBy === 'distance') {
       // 按距离排序（暂时使用更新时间，未来可添加GPS定位）
       query.orderBy('hotel.updatedAt', 'DESC');
@@ -549,7 +591,10 @@ export class HotelsService {
     }
 
     // 住宿类型筛选：hotel 表示“全部酒店”不额外过滤，其它类型按名称/描述关键字匹配
-    if (filters?.accommodationType?.length && !filters.accommodationType.includes('hotel')) {
+    if (
+      filters?.accommodationType?.length &&
+      !filters.accommodationType.includes('hotel')
+    ) {
       const typeConditions: string[] = [];
       let keywordIndex = 0;
       filters.accommodationType.forEach((type) => {
@@ -569,49 +614,57 @@ export class HotelsService {
         query.andWhere('1 = 0');
       }
     }
-    
+
     // 设施筛选 - 搜索 facilities 字段
     if (filters?.facilities?.length) {
-      const facilityConditions = filters.facilities.map((_, i) => `hotel.facilities LIKE :facility${i}`);
+      const facilityConditions = filters.facilities.map(
+        (_, i) => `hotel.facilities LIKE :facility${i}`,
+      );
       query.andWhere(`(${facilityConditions.join(' OR ')})`);
       filters.facilities.forEach((facility, i) => {
         query.setParameter(`facility${i}`, `%${facility}%`);
       });
     }
-    
+
     // 品牌筛选 - 搜索酒店名称
     if (filters?.brands?.length) {
-      const brandConditions = filters.brands.map((_, i) => `hotel.nameCn LIKE :brand${i}`);
+      const brandConditions = filters.brands.map(
+        (_, i) => `hotel.nameCn LIKE :brand${i}`,
+      );
       query.andWhere(`(${brandConditions.join(' OR ')})`);
       filters.brands.forEach((brand, i) => {
         query.setParameter(`brand${i}`, `%${brand}%`);
       });
     }
-    
+
     // 酒店特色筛选 - 搜索 description、facilities 和 transportation 字段
     if (filters?.hotelFeatures?.length) {
-      const featureConditions = filters.hotelFeatures.map((_, i) => 
-        `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i} OR hotel.transportation LIKE :hotelFeature${i})`
+      const featureConditions = filters.hotelFeatures.map(
+        (_, i) =>
+          `(hotel.description LIKE :hotelFeature${i} OR hotel.facilities LIKE :hotelFeature${i} OR hotel.transportation LIKE :hotelFeature${i})`,
       );
       query.andWhere(`(${featureConditions.join(' OR ')})`);
       filters.hotelFeatures.forEach((feature, i) => {
         query.setParameter(`hotelFeature${i}`, `%${feature}%`);
       });
     }
-    
+
     // 房间特色筛选 - 搜索房型名称
     if (filters?.roomFeatures?.length) {
-      const roomConditions = filters.roomFeatures.map((_, i) => `roomTypes.name LIKE :roomFeature${i}`);
+      const roomConditions = filters.roomFeatures.map(
+        (_, i) => `roomTypes.name LIKE :roomFeature${i}`,
+      );
       query.andWhere(`(${roomConditions.join(' OR ')})`);
       filters.roomFeatures.forEach((feature, i) => {
         query.setParameter(`roomFeature${i}`, `%${feature}%`);
       });
     }
-    
+
     // 热门标签筛选 - 搜索设施、描述、房型名称和交通信息
     if (filters?.tags?.length) {
-      const tagConditions = filters.tags.map((_, i) => 
-        `(hotel.facilities LIKE :tag${i} OR hotel.description LIKE :tag${i} OR hotel.transportation LIKE :tag${i} OR roomTypes.name LIKE :tag${i})`
+      const tagConditions = filters.tags.map(
+        (_, i) =>
+          `(hotel.facilities LIKE :tag${i} OR hotel.description LIKE :tag${i} OR hotel.transportation LIKE :tag${i} OR roomTypes.name LIKE :tag${i})`,
       );
       // 使用 OR，任一标签命中即可，避免过于严格导致“筛不到结果”
       query.andWhere(`(${tagConditions.join(' OR ')})`);
@@ -619,7 +672,7 @@ export class HotelsService {
         query.setParameter(`tag${i}`, `%${tag}%`);
       });
     }
-    
+
     // 价格区间筛选
     if (filters?.minPrice != null && filters.minPrice > 0) {
       const subQuery = this.hotelsRepository.manager
@@ -628,7 +681,9 @@ export class HotelsService {
         .from('room_types', 'rt')
         .groupBy('rt.hotelId')
         .having('MIN(rt.price) >= :minPrice');
-      query.andWhere(`hotel.id IN (${subQuery.getQuery()})`).setParameter('minPrice', filters.minPrice);
+      query
+        .andWhere(`hotel.id IN (${subQuery.getQuery()})`)
+        .setParameter('minPrice', filters.minPrice);
     }
     if (filters?.maxPrice != null && filters.maxPrice > 0) {
       const subQuery = this.hotelsRepository.manager
@@ -637,7 +692,9 @@ export class HotelsService {
         .from('room_types', 'rt')
         .groupBy('rt.hotelId')
         .having('MIN(rt.price) <= :maxPrice');
-      query.andWhere(`hotel.id IN (${subQuery.getQuery()})`).setParameter('maxPrice', filters.maxPrice);
+      query
+        .andWhere(`hotel.id IN (${subQuery.getQuery()})`)
+        .setParameter('maxPrice', filters.maxPrice);
     }
 
     const total = await query.getCount();
@@ -649,9 +706,12 @@ export class HotelsService {
     data.forEach((hotel) => this.normalizeHotel(hotel));
 
     // 转为普通对象并显式带上 coverImageUrl，确保序列化后前端一定能拿到主图
-    const dataWithCover = data.map((h) => {
-      const cover = ((h as any).coverImageUrl as string | undefined)?.trim?.();
-      return { ...h, coverImageUrl: cover || getPlaceholderImageUrl(h.id) };
+    const dataWithCover = data.map((hotel) => {
+      const cover = (hotel as HotelWithCover).coverImageUrl?.trim();
+      return {
+        ...hotel,
+        coverImageUrl: cover || getPlaceholderImageUrl(hotel.id),
+      };
     });
 
     return {

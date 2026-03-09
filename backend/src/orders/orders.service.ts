@@ -146,10 +146,14 @@ export class OrdersService {
       const repo = manager.getRepository(Order);
       const order = await repo.findOne({ where: { id: orderId } });
       if (!order) throw new NotFoundException('订单不存在');
-      if (order.userId !== userId) throw new ForbiddenException('无权操作此订单');
+      if (order.userId !== userId)
+        throw new ForbiddenException('无权操作此订单');
 
       // 超时自动过期（在关键路径补一次“懒过期”）
-      if (order.status === OrderStatus.PENDING_PAYMENT && Date.now() > Number(order.expiresAt)) {
+      if (
+        order.status === OrderStatus.PENDING_PAYMENT &&
+        Date.now() > Number(order.expiresAt)
+      ) {
         order.status = OrderStatus.EXPIRED;
         order.expiredAt = Date.now();
         await this.inventoryService.release(
@@ -180,7 +184,9 @@ export class OrdersService {
       const saved = await repo.save(order);
 
       // 通知商户 + 通知用户（状态变化）
-      const hotel = await manager.getRepository(Hotel).findOne({ where: { id: order.hotelId } });
+      const hotel = await manager
+        .getRepository(Hotel)
+        .findOne({ where: { id: order.hotelId } });
       if (hotel) {
         this.notificationsGateway.sendNotification({
           type: 'order_cancelled',
@@ -233,7 +239,8 @@ export class OrdersService {
 
       // 已处理过（幂等）：直接返回
       if (order.status === OrderStatus.PAID) return order;
-      if ([OrderStatus.CANCELLED, OrderStatus.EXPIRED].includes(order.status)) return order;
+      if ([OrderStatus.CANCELLED, OrderStatus.EXPIRED].includes(order.status))
+        return order;
 
       // 过期：落终态并释放
       if (Date.now() > Number(order.expiresAt)) {
@@ -263,7 +270,9 @@ export class OrdersService {
       order.paymentEventId = params.eventId;
       const saved = await repo.save(order);
 
-      const hotel = await manager.getRepository(Hotel).findOne({ where: { id: order.hotelId } });
+      const hotel = await manager
+        .getRepository(Hotel)
+        .findOne({ where: { id: order.hotelId } });
       if (hotel) {
         this.notificationsGateway.sendNotification({
           type: 'order_paid',
@@ -287,4 +296,3 @@ export class OrdersService {
     });
   }
 }
-

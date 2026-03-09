@@ -59,7 +59,12 @@ export class HotelsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: HotelStatus })
-  @ApiQuery({ name: 'keyword', required: false, type: String, description: '搜索关键词' })
+  @ApiQuery({
+    name: 'keyword',
+    required: false,
+    type: String,
+    description: '搜索关键词',
+  })
   async findMy(
     @CurrentUser() user: { id: number },
     @Query('page') page?: number,

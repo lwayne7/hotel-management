@@ -4,6 +4,11 @@ import { DataSource, LessThan } from 'typeorm';
 import { Order, OrderStatus } from './order.entity';
 import { InventoryService } from '../inventory/inventory.service';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 @Injectable()
 export class OrdersExpirationService {
   private readonly logger = new Logger(OrdersExpirationService.name);
@@ -57,12 +62,15 @@ export class OrdersExpirationService {
           await orderRepo.save(fresh);
         });
         successCount++;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        this.logger.error(`订单 ${order.orderNo} 过期处理失败: ${message}`);
+      } catch (error: unknown) {
+        this.logger.error(
+          `订单 ${order.orderNo} 过期处理失败: ${getErrorMessage(error)}`,
+        );
       }
     }
 
-    this.logger.log(`过期订单处理完成：${successCount}/${expiredOrders.length}`);
+    this.logger.log(
+      `过期订单处理完成：${successCount}/${expiredOrders.length}`,
+    );
   }
 }

@@ -19,21 +19,33 @@ describe('PaymentsService (idempotency)', () => {
     ds = new DataSource({
       type: 'better-sqlite3',
       database: ':memory:',
-      entities: [PaymentEvent, Order, RoomInventory, Hotel, RoomType, HotelImage, User],
+      entities: [
+        PaymentEvent,
+        Order,
+        RoomInventory,
+        Hotel,
+        RoomType,
+        HotelImage,
+        User,
+      ],
       synchronize: true,
       logging: false,
     });
     await ds.initialize();
 
     const inventoryService = new InventoryService();
-    const notificationsGateway = { sendNotification: () => { } } as any;
+    const notificationsGateway = { sendNotification: () => {} } as any;
     ordersService = new OrdersService(
       ds,
       ds.getRepository(Order),
       inventoryService,
       notificationsGateway,
     );
-    paymentsService = new PaymentsService(ds, ds.getRepository(PaymentEvent), ordersService);
+    paymentsService = new PaymentsService(
+      ds,
+      ds.getRepository(PaymentEvent),
+      ordersService,
+    );
 
     await ds.getRepository(User).save({
       id: 100,
@@ -78,8 +90,20 @@ describe('PaymentsService (idempotency)', () => {
     } as any);
 
     await ds.getRepository(RoomInventory).save([
-      { roomTypeId: 101, date: '2026-03-10', total: 2, reserved: 0, sold: 0 } as any,
-      { roomTypeId: 101, date: '2026-03-11', total: 2, reserved: 0, sold: 0 } as any,
+      {
+        roomTypeId: 101,
+        date: '2026-03-10',
+        total: 2,
+        reserved: 0,
+        sold: 0,
+      } as any,
+      {
+        roomTypeId: 101,
+        date: '2026-03-11',
+        total: 2,
+        reserved: 0,
+        sold: 0,
+      } as any,
     ]);
   });
 
@@ -117,4 +141,3 @@ describe('PaymentsService (idempotency)', () => {
     expect(r2.idempotent).toBe(true);
   });
 });
-

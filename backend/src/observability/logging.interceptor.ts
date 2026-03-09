@@ -8,6 +8,10 @@ import { Observable, tap } from 'rxjs';
 import { Request, Response } from 'express';
 import { MetricsService } from './metrics.service';
 
+type RequestWithContext = Request & {
+  requestId?: string;
+};
+
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   constructor(private readonly metricsService: MetricsService) {}
@@ -15,13 +19,14 @@ export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const now = Date.now();
     const httpCtx = context.switchToHttp();
-    const req = httpCtx.getRequest<Request>();
+    const req = httpCtx.getRequest<RequestWithContext>();
     const res = httpCtx.getResponse<Response>();
 
     const method = req.method;
     const originalUrl = req.originalUrl || req.url;
-    const route = req.route?.path ?? originalUrl;
-    const requestId = (req as any).requestId;
+    const route = req.path || originalUrl;
+    const requestId =
+      typeof req.requestId === 'string' ? req.requestId : undefined;
 
     return next.handle().pipe(
       tap(() => {
@@ -30,7 +35,7 @@ export class LoggingInterceptor implements NestInterceptor {
 
         if (process.env.NODE_ENV !== 'test') {
           // 结构化日志，便于后续接入集中日志系统
-          // eslint-disable-next-line no-console
+
           console.log(
             JSON.stringify({
               type: 'http_request',
@@ -45,12 +50,7 @@ export class LoggingInterceptor implements NestInterceptor {
           );
         }
 
-        this.metricsService.observeRequest(
-          method,
-          route,
-          statusCode,
-          duration,
-        );
+        this.metricsService.observeRequest(method, route, statusCode, duration);
       }),
     );
   }

@@ -17,7 +17,9 @@ export class PaymentsService {
 
   async handleCallback(dto: PaymentCallbackDto) {
     // 幂等：eventId 唯一索引，重复回调直接读旧记录返回
-    const existing = await this.paymentEventsRepo.findOne({ where: { eventId: dto.eventId } });
+    const existing = await this.paymentEventsRepo.findOne({
+      where: { eventId: dto.eventId },
+    });
     if (existing) {
       return {
         ok: true,
@@ -45,7 +47,9 @@ export class PaymentsService {
       });
 
       saved.status =
-        order.status === OrderStatus.PAID ? PaymentEventStatus.PROCESSED : PaymentEventStatus.IGNORED;
+        order.status === OrderStatus.PAID
+          ? PaymentEventStatus.PROCESSED
+          : PaymentEventStatus.IGNORED;
       saved.processedAt = Date.now();
       await repo.save(saved);
 
@@ -58,4 +62,3 @@ export class PaymentsService {
     });
   }
 }
-

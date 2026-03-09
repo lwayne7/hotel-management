@@ -27,7 +27,10 @@ import { AuditModule } from './audit/audit.module';
       isGlobal: true,
       load: [databaseConfig],
       // 使用绝对路径，避免从不同工作目录启动时读不到 env 文件
-      envFilePath: [path.resolve(__dirname, '../.env.local'), path.resolve(__dirname, '../.env')],
+      envFilePath: [
+        path.resolve(__dirname, '../.env.local'),
+        path.resolve(__dirname, '../.env'),
+      ],
     }),
     // 定时任务
     ScheduleModule.forRoot(),
@@ -39,15 +42,20 @@ import { AuditModule } from './audit/audit.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const dbType = configService.get<'postgres' | 'better-sqlite3'>('database.type');
+        const dbType = configService.get<'postgres' | 'better-sqlite3'>(
+          'database.type',
+        );
         const entities = [__dirname + '/**/*.entity{.ts,.js}'];
-        const synchronize = configService.get<boolean>('database.synchronize') ?? false;
+        const synchronize =
+          configService.get<boolean>('database.synchronize') ?? false;
         const logging = configService.get<boolean>('database.logging') ?? false;
 
         if (dbType === 'better-sqlite3') {
           return {
             type: 'better-sqlite3',
-            database: configService.get<string>('database.database') ?? 'hotel_management.sqlite',
+            database:
+              configService.get<string>('database.database') ??
+              'hotel_management.sqlite',
             entities,
             synchronize,
             logging,
@@ -58,9 +66,13 @@ import { AuditModule } from './audit/audit.module';
           type: 'postgres',
           host: configService.get<string>('database.host') ?? 'localhost',
           port: configService.get<number>('database.port') ?? 5432,
-          username: configService.get<string>('database.username') ?? 'postgres',
-          password: configService.get<string>('database.password') ?? 'postgres',
-          database: configService.get<string>('database.database') ?? 'hotel_management',
+          username:
+            configService.get<string>('database.username') ?? 'postgres',
+          password:
+            configService.get<string>('database.password') ?? 'postgres',
+          database:
+            configService.get<string>('database.database') ??
+            'hotel_management',
           entities,
           synchronize,
           logging,

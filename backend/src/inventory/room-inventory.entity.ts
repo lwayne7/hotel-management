@@ -37,4 +37,3 @@ export class RoomInventory {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-

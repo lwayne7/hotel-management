@@ -43,7 +43,7 @@ export async function createE2EApp() {
   }).compile();
 
   const app = moduleFixture.createNestApplication();
-  await configureApp(app);
+  configureApp(app);
   await app.init();
 
   return {
@@ -116,7 +116,9 @@ export async function seedE2EData(
   } as RoomType);
 
   const today = new Date();
-  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const start = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+  );
   const checkInDate = addDays(start, 1);
   const checkOutDate = addDays(start, 2);
 
@@ -131,7 +133,7 @@ export async function seedE2EData(
   ]);
 
   const loginRes = await request(app.getHttpServer())
-    .post('/api/auth/login')
+    .post('/api/v1/auth/login')
     .send({ username: customer.username, password: 'Test123456' })
     .expect(200);
 

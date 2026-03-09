@@ -9,10 +9,12 @@ import { RoomType } from '../hotels/entities/room-type.entity';
 import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, Hotel, RoomType]), InventoryModule],
+  imports: [
+    TypeOrmModule.forFeature([Order, Hotel, RoomType]),
+    InventoryModule,
+  ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersExpirationService],
   exports: [OrdersService],
 })
 export class OrdersModule {}
-

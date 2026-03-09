@@ -79,6 +79,6 @@ describe('Login page', () => {
       });
     });
     expect(await screen.findByText('merchant dashboard')).toBeInTheDocument();
-    expect(sessionStorage.getItem('token')).toBe('merchant-token');
+    expect(localStorage.getItem('token')).toBe('merchant-token');
   });
 });

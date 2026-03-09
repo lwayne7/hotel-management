@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsIn, IsOptional, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  IsIn,
+  IsOptional,
+  Matches,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../../users/entities/user.entity';
 
@@ -26,8 +34,14 @@ export class RegisterDto {
   })
   password: string;
 
-  @ApiProperty({ description: '用户角色（仅允许 merchant / customer）', enum: ALLOWED_REGISTER_ROLES, example: UserRole.MERCHANT })
-  @IsIn(ALLOWED_REGISTER_ROLES, { message: '注册角色仅允许 merchant 或 customer' })
+  @ApiProperty({
+    description: '用户角色（仅允许 merchant / customer）',
+    enum: ALLOWED_REGISTER_ROLES,
+    example: UserRole.MERCHANT,
+  })
+  @IsIn(ALLOWED_REGISTER_ROLES, {
+    message: '注册角色仅允许 merchant 或 customer',
+  })
   role: UserRole;
 
   @ApiPropertyOptional({ description: '昵称', example: '张三酒店' })

@@ -9,15 +9,20 @@ function configureCors(app: INestApplication) {
 
   app.enableCors({
     origin: isProd
-      ? (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-        const allowed =
-          !origin ||
-          /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-          /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(origin) ||
-          /^https:\/\/.*\.vercel\.app$/.test(origin) ||
-          /^https:\/\/servicewechat\.com$/.test(origin);
-        callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
-      }
+      ? (
+          origin: string | undefined,
+          callback: (err: Error | null, allow?: boolean) => void,
+        ) => {
+          const allowed =
+            !origin ||
+            /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+            /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(
+              origin,
+            ) ||
+            /^https:\/\/.*\.vercel\.app$/.test(origin) ||
+            /^https:\/\/servicewechat\.com$/.test(origin);
+          callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+        }
       : true,
     credentials: true,
   });
@@ -66,9 +71,13 @@ export function configureApp(
 export function logDatabaseInfo(app: INestApplication) {
   try {
     const configService = app.get(ConfigService);
-    const dbType = configService.get<'postgres' | 'better-sqlite3'>('database.type');
+    const dbType = configService.get<'postgres' | 'better-sqlite3'>(
+      'database.type',
+    );
     if (dbType === 'better-sqlite3') {
-      console.log(`🗄️  DB: sqlite (${configService.get<string>('database.database')})`);
+      console.log(
+        `🗄️  DB: sqlite (${configService.get<string>('database.database')})`,
+      );
     } else {
       console.log(
         `🗄️  DB: postgres (${configService.get<string>('database.host')}:${configService.get<number>('database.port')}/${configService.get<string>('database.database')})`,

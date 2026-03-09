@@ -9,4 +9,3 @@ import { InventoryService } from './inventory.service';
   exports: [InventoryService, TypeOrmModule],
 })
 export class InventoryModule {}
-

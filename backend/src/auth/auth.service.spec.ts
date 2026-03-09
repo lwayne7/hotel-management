@@ -10,7 +10,12 @@ type CreateUserData = Pick<User, 'username' | 'password' | 'role'> &
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let mockUsersService: jest.Mocked<Pick<UsersService, 'findByUsername' | 'findById' | 'create' | 'existsByUsername'>>;
+  let mockUsersService: jest.Mocked<
+    Pick<
+      UsersService,
+      'findByUsername' | 'findById' | 'create' | 'existsByUsername'
+    >
+  >;
   let mockJwtService: jest.Mocked<Pick<JwtService, 'sign'>>;
 
   /** Auto-increment counter for mock-created users */
@@ -40,17 +45,19 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should create a new user with hashed password and return JWT token', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(async (userData: CreateUserData) => {
-        const id = nextUserId++;
-        return {
-          id,
-          username: userData.username,
-          password: userData.password,
-          role: userData.role,
-          nickname: userData.nickname ?? null,
-          phone: userData.phone ?? null,
-        } as unknown as User;
-      });
+      mockUsersService.create.mockImplementation(
+        async (userData: CreateUserData) => {
+          const id = nextUserId++;
+          return {
+            id,
+            username: userData.username,
+            password: userData.password,
+            role: userData.role,
+            nickname: userData.nickname ?? null,
+            phone: userData.phone ?? null,
+          } as unknown as User;
+        },
+      );
 
       const result = await authService.register({
         username: 'merchant001',
@@ -61,10 +68,13 @@ describe('AuthService', () => {
       });
 
       // Should check existence first
-      expect(mockUsersService.existsByUsername).toHaveBeenCalledWith('merchant001');
+      expect(mockUsersService.existsByUsername).toHaveBeenCalledWith(
+        'merchant001',
+      );
 
       // The password stored should be a bcrypt hash, not plaintext
-      const createCall = mockUsersService.create.mock.calls[0][0] as CreateUserData;
+      const createCall = mockUsersService.create.mock
+        .calls[0][0] as CreateUserData;
       expect(createCall.username).toBe('merchant001');
       expect(createCall.password).not.toBe('Password123');
       const isHashed = await bcrypt.compare('Password123', createCall.password);
@@ -101,10 +111,13 @@ describe('AuthService', () => {
 
     it('should work correctly with merchant role', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(async (userData: CreateUserData) => ({
-        id: nextUserId++,
-        ...userData,
-      } as unknown as User));
+      mockUsersService.create.mockImplementation(
+        async (userData: CreateUserData) =>
+          ({
+            id: nextUserId++,
+            ...userData,
+          }) as unknown as User,
+      );
 
       const result = await authService.register({
         username: 'merchant002',
@@ -120,10 +133,13 @@ describe('AuthService', () => {
 
     it('should work correctly with customer role', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
-      mockUsersService.create.mockImplementation(async (userData: CreateUserData) => ({
-        id: nextUserId++,
-        ...userData,
-      } as unknown as User));
+      mockUsersService.create.mockImplementation(
+        async (userData: CreateUserData) =>
+          ({
+            id: nextUserId++,
+            ...userData,
+          }) as unknown as User,
+      );
 
       const result = await authService.register({
         username: 'customer001',
