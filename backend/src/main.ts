@@ -44,6 +44,8 @@ async function bootstrap() {
     .addTag('认证', '用户注册与登录')
     .addTag('酒店', '酒店信息管理')
     .addTag('审核', '酒店审核管理')
+    .addTag('订单', '用户端下单与状态流转')
+    .addTag('支付', '支付回调（幂等）')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);

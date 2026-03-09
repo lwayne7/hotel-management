@@ -21,7 +21,7 @@ export class RegisterDto {
   password: string;
 
   @ApiProperty({ description: '用户角色', enum: UserRole, example: UserRole.MERCHANT })
-  @IsEnum(UserRole, { message: '角色必须是 merchant 或 admin' })
+  @IsEnum(UserRole, { message: '角色必须是 merchant / admin / customer' })
   role: UserRole;
 
   @ApiPropertyOptional({ description: '昵称', example: '张三酒店' })

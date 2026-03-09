@@ -12,10 +12,19 @@
 | 🔄 **完整审核工作流** | DRAFT → PENDING → APPROVED / REJECTED → OFFLINE，覆盖酒店全生命周期 |
 | 📡 **WebSocket 实时通知** | 基于 Socket.IO，商户提交/管理员审核操作秒级推送，按角色精准投递 |
 | 📈 **SSE 价格流** | RxJS Subject + interval 合并流，30s keepalive，客户端零丢失 |
+| 🧾 **预订闭环（订单+库存）** | 用户端下单/取消/查询，日历库存 `total/reserved/sold` + 事务化 reserve/commit/release，演示“防超卖”与状态机约束 |
+| 🔁 **支付回调幂等** | `PaymentEvent(eventId)` 唯一约束，重复/乱序回调不会二次扣库存或重复迁移订单状态 |
 | 🔐 **JWT + RBAC** | Passport.js 认证、RolesGuard 鉴权、bcrypt 密码哈希，商户/管理员双角色隔离 |
 | 🗂️ **万级种子数据** | 一键生成 10 000 家酒店 × 50 城市 × 5 星级 × 150+ 张 Unsplash 高质量图片 |
 | 📝 **Swagger 文档** | 自动生成 OpenAPI 文档，开箱即用 |
 | 🎨 **企业级 UI** | Ant Design 6 定制主题、深色侧边栏、响应式布局、ErrorBoundary 兜底 |
+
+---
+
+## 📐 架构与关键设计（面试友好）
+
+- **架构与关键设计**：[`docs/架构与关键设计.md`](./docs/架构与关键设计.md)
+- **文档中心**：[`docs/README.md`](./docs/README.md)
 
 ---
 
@@ -126,8 +135,12 @@ npm run generate-hotels      # 生成 10 000 家酒店
 
 | 模块 | 方法 | 路径 | 描述 |
 |------|------|------|------|
-| 认证 | POST | `/api/auth/register` | 注册（可选 merchant / admin） |
+| 认证 | POST | `/api/auth/register` | 注册（可选 merchant / admin / customer） |
 | 认证 | POST | `/api/auth/login` | 登录 |
+| 订单 | POST | `/api/orders` | 创建订单（customer） |
+| 订单 | GET | `/api/orders/mine` | 我的订单列表（customer） |
+| 订单 | POST | `/api/orders/:id/cancel` | 取消订单（customer，仅待支付） |
+| 支付 | POST | `/api/payments/callback` | 模拟支付回调（幂等） |
 | 商户 | POST | `/api/hotels` | 创建酒店 |
 | 商户 | PATCH | `/api/hotels/:id` | 编辑酒店 |
 | 商户 | POST | `/api/hotels/:id/submit` | 提交审核 |
@@ -150,6 +163,7 @@ npm run generate-hotels      # 生成 10 000 家酒店
 | 商户 | merchant01 | Test123456 |
 | 商户 | merchant02 | Test123456 |
 | 管理员 | admin01 | Admin123456 |
+| 用户 | customer01 | Cust123456 |
 
 ---
 

@@ -3,7 +3,7 @@ import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
-import { login, clearError } from '../../../store/slices/authSlice';
+import { login, clearError, logout } from '../../../store/slices/authSlice';
 import type { AuthResponse } from '../../../services/api';
 import './auth.css';
 
@@ -35,9 +35,17 @@ const Login: React.FC = () => {
   const onFinish = async (values: { username: string; password: string }) => {
     const result = await dispatch(login(values));
     if (login.fulfilled.match(result)) {
-      message.success('登录成功');
       const payload = result.payload as AuthResponse;
       const user = payload.user;
+      // 管理端只面向商户 / 管理员，普通用户统一引导去移动端
+      if (user.role !== 'merchant' && user.role !== 'admin') {
+        message.error('此后台仅面向商户和管理员，请使用移动端小程序体验普通用户功能');
+        dispatch(logout());
+        return;
+      }
+
+      message.success('登录成功');
+
       // 根据角色跳转
       if (user.role === 'merchant') {
         navigate('/merchant/hotels');
@@ -88,8 +96,9 @@ const Login: React.FC = () => {
           </Form.Item>
 
           <div className="auth-footer">
-            <Text>还没有账户？</Text>
-            <Link to="/register">立即注册</Link>
+            <Text type="secondary">
+              本管理后台仅供 <strong>商户 / 管理员</strong> 使用；普通用户请通过移动端小程序进行预订与查看订单。
+            </Text>
           </div>
         </Form>
       </Card>

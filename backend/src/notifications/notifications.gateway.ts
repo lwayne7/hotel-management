@@ -10,7 +10,15 @@ import { NotificationsService } from './notifications.service';
 import { UserRole } from '../users/entities/user.entity';
 
 export interface NotificationPayload {
-  type: 'hotel_submitted' | 'hotel_approved' | 'hotel_rejected' | 'hotel_offline' | 'hotel_online';
+  type:
+    | 'hotel_submitted'
+    | 'hotel_approved'
+    | 'hotel_rejected'
+    | 'hotel_offline'
+    | 'hotel_online'
+    | 'order_created'
+    | 'order_paid'
+    | 'order_cancelled';
   hotelId: number;
   hotelName: string;
   message: string;

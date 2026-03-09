@@ -25,6 +25,13 @@ export const SEED_USERS: SeedUser[] = [
         nickname: '系统管理员',
         phone: '13900139001',
     },
+    {
+        username: 'customer01',
+        password: 'Cust123456',
+        role: 'customer',
+        nickname: '测试用户',
+        phone: '13700137001',
+    },
 ];
 
 /**
@@ -37,7 +44,8 @@ export function printUserCredentials(): void {
     console.log('├─────────────┼───────────────┼──────────────┤');
 
     for (const user of SEED_USERS) {
-        const roleLabel = user.role === 'merchant' ? '商户' : '管理员';
+        const roleLabel =
+            user.role === 'merchant' ? '商户' : user.role === 'admin' ? '管理员' : '用户';
         console.log(`│ ${roleLabel.padEnd(10)} │ ${user.username.padEnd(13)} │ ${user.password.padEnd(12)} │`);
     }
 

@@ -7,7 +7,7 @@ import { HotelStatus } from '../../hotels/entities/hotel.entity';
 export interface SeedUser {
     username: string;
     password: string;
-    role: 'merchant' | 'admin';
+    role: 'merchant' | 'admin' | 'customer';
     nickname: string;
     phone: string;
 }

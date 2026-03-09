@@ -4,6 +4,7 @@ import { Hotel } from '../../hotels/entities/hotel.entity';
 export enum UserRole {
   MERCHANT = 'merchant',
   ADMIN = 'admin',
+  CUSTOMER = 'customer',
 }
 
 @Entity('users')

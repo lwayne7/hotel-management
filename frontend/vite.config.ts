@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// 后端地址：优先使用本地后端，未启动时使用线上 Railway 后端
-const API_TARGET = process.env.VITE_API_TARGET || 'https://hotel-management-production-wayne.up.railway.app'
+// 后端地址：
+// - 开发环境默认指向本地 NestJS 后端（http://localhost:3000）
+// - 如需连线上环境，可通过 VITE_API_TARGET 显式覆盖
+const API_TARGET = process.env.VITE_API_TARGET || 'http://localhost:3000'
 
 // https://vite.dev/config/
 export default defineConfig({

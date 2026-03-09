@@ -10,6 +10,9 @@ import { UsersModule } from './users/users.module';
 import { HotelsModule } from './hotels/hotels.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -56,6 +59,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     HotelsModule,
     AdminModule,
     NotificationsModule,
+    InventoryModule,
+    OrdersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

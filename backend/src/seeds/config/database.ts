@@ -9,9 +9,12 @@ import { Hotel, HotelStatus } from '../../hotels/entities/hotel.entity';
 import { RoomType } from '../../hotels/entities/room-type.entity';
 import { HotelImage } from '../../hotels/entities/hotel-image.entity';
 import { User } from '../../users/entities/user.entity';
+import { RoomInventory } from '../../inventory/room-inventory.entity';
+import { Order } from '../../orders/order.entity';
+import { PaymentEvent } from '../../payments/payment-event.entity';
 
 // 导出实体供外部使用
-export { Hotel, HotelStatus, RoomType, HotelImage, User };
+export { Hotel, HotelStatus, RoomType, HotelImage, User, RoomInventory, Order, PaymentEvent };
 
 const backendRoot = path.resolve(__dirname, '../../..');
 
@@ -35,6 +38,7 @@ function parseDatabaseUrl(url: string) {
 export function getDatabaseConfig(): DataSourceOptions {
     const databaseUrl = process.env.DATABASE_URL;
     const dbType = databaseUrl ? 'postgres' : (process.env.DB_TYPE || 'sqlite');
+    const isProd = process.env.NODE_ENV === 'production';
 
     if (dbType === 'postgres') {
         const conn = databaseUrl
@@ -50,8 +54,8 @@ export function getDatabaseConfig(): DataSourceOptions {
         return {
             type: 'postgres',
             ...conn,
-            entities: [User, Hotel, RoomType, HotelImage],
-            synchronize: false,
+            entities: [User, Hotel, RoomType, HotelImage, RoomInventory, Order, PaymentEvent],
+            synchronize: !isProd,
             logging: false,
             ...(isRemote ? { ssl: { rejectUnauthorized: false } } : {}),
         } as DataSourceOptions;
@@ -61,8 +65,8 @@ export function getDatabaseConfig(): DataSourceOptions {
     return {
         type: 'better-sqlite3',
         database: dbPath,
-        entities: [User, Hotel, RoomType, HotelImage],
-        synchronize: false,
+        entities: [User, Hotel, RoomType, HotelImage, RoomInventory, Order, PaymentEvent],
+        synchronize: !isProd,
         logging: false,
     } as DataSourceOptions;
 }

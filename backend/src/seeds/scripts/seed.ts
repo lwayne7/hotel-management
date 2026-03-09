@@ -15,7 +15,8 @@ import {
     HotelStatus,
     RoomType,
     HotelImage,
-    User
+    User,
+    RoomInventory,
 } from '../config/database';
 import { SEED_USERS, printUserCredentials } from '../data/users';
 import { FEATURED_HOTELS } from '../data/featured-hotels';
@@ -38,21 +39,25 @@ async function seed() {
     const hotelRepository = dataSource.getRepository(Hotel);
     const roomTypeRepository = dataSource.getRepository(RoomType);
     const imageRepository = dataSource.getRepository(HotelImage);
+    const inventoryRepository = dataSource.getRepository(RoomInventory);
 
     // ========== 初始化用户 ==========
-    const existingUsers = await userRepository.count();
-    if (existingUsers === 0) {
-        console.log('📝 创建测试用户...');
-        for (const userData of SEED_USERS) {
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
-            await userRepository.save({
-                ...userData,
-                password: hashedPassword,
-            } as any);
-        }
-        console.log(`   ✓ 创建了 ${SEED_USERS.length} 个用户`);
+    console.log('📝 初始化/补齐测试用户...');
+    let createdUsers = 0;
+    for (const userData of SEED_USERS) {
+        const exists = await userRepository.findOne({ where: { username: userData.username } });
+        if (exists) continue;
+        const hashedPassword = await bcrypt.hash(userData.password, 10);
+        await userRepository.save({
+            ...userData,
+            password: hashedPassword,
+        } as any);
+        createdUsers++;
+    }
+    if (createdUsers > 0) {
+        console.log(`   ✓ 新增了 ${createdUsers} 个用户（总模板 ${SEED_USERS.length}）`);
     } else {
-        console.log('⚠️  数据库已有用户数据，跳过用户初始化');
+        console.log('   ✓ 用户已齐全，无需新增');
     }
 
     // ========== 初始化精选酒店 ==========
@@ -125,6 +130,46 @@ async function seed() {
         console.log(`   ✓ 创建了 ${FEATURED_HOTELS.length} 家精选酒店`);
     } else {
         console.log('⚠️  数据库已有酒店数据，跳过酒店初始化');
+    }
+
+    // ========== 初始化房型库存（未来 30 天） ==========
+    const existingInventories = await inventoryRepository.count();
+    if (existingInventories === 0) {
+        console.log('\n📦 初始化房型库存（未来30天，每天 total=10）...');
+        const roomTypes = await roomTypeRepository.find();
+        const today = new Date();
+        const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+        const days = 30;
+
+        const inventoryRows: Array<Partial<RoomInventory>> = [];
+        for (const rt of roomTypes) {
+            for (let i = 0; i < days; i++) {
+                const d = new Date(start);
+                d.setUTCDate(d.getUTCDate() + i);
+                const dateStr = d.toISOString().slice(0, 10);
+                inventoryRows.push({
+                    roomTypeId: rt.id,
+                    date: dateStr,
+                    total: 10,
+                    reserved: 0,
+                    sold: 0,
+                });
+            }
+        }
+
+        const batchSize = 2000;
+        for (let i = 0; i < inventoryRows.length; i += batchSize) {
+            const batch = inventoryRows.slice(i, i + batchSize);
+            await inventoryRepository
+                .createQueryBuilder()
+                .insert()
+                .into(RoomInventory)
+                .values(batch as any)
+                .execute();
+        }
+        console.log(`   ✓ 初始化库存记录 ${inventoryRows.length} 条（房型数 ${roomTypes.length}）`);
+    } else {
+        console.log('\n⚠️  数据库已有库存数据，跳过库存初始化');
     }
 
     console.log('\n🎉 种子数据初始化完成！');
