@@ -26,6 +26,15 @@
 - **架构与关键设计**：[`docs/架构与关键设计.md`](./docs/架构与关键设计.md)
 - **文档中心**：[`docs/README.md`](./docs/README.md)
 
+### 面试快速浏览
+
+- **防超卖与预订闭环**：`Orders + Inventory + Payments` 模块设计订单状态机与日历库存，保证在并发场景下 `reserved + sold <= total` 恒成立。
+- **支付回调幂等与乱序安全**：通过 `PaymentEvent(eventId)` 唯一约束与终态幂等处理，避免重复扣减库存或错误状态迁移。
+- **实时链路设计**：公开端用 SSE 推价格变更流，管理端用 WebSocket 推审核/订单结果，小程序/RN 端用轮询兜底。
+- **可观测性与排障**：`/metrics` + `/healthz` + 结构化日志（`requestId`），可以从告警一路追到具体请求与 SQL。
+- **安全与审计**：`class-validator` 全面做输入白名单校验，TypeORM 参数化防注入，敏感操作写入 `AuditLog` 便于追责。
+- **测试与 CI 思路**：订单/支付有成体系的单测与 E2E 测试，并提供 GitHub Actions CI 的示例工作流。
+
 ---
 
 ## 🛠️ 技术栈

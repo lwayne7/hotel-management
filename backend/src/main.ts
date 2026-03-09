@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { LoggingInterceptor } from './observability/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +19,9 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // 全局日志与指标拦截器
+  app.useGlobalInterceptors(app.get(LoggingInterceptor));
 
   // 启用 CORS（开发环境放开，避免小程序/DevTools 由于 Origin/Referer 被拦截导致“请求成功但拿不到数据/直接失败”）
   const isProd = process.env.NODE_ENV === 'production';

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import path from 'path';
@@ -13,6 +13,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ObservabilityModule } from './observability/observability.module';
+import { RequestContextMiddleware } from './observability/request-context.middleware';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -62,8 +65,14 @@ import { PaymentsModule } from './payments/payments.module';
     InventoryModule,
     OrdersModule,
     PaymentsModule,
+    ObservabilityModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}
