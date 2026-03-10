@@ -29,12 +29,16 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   /**
    * 生成 access_token + refresh_token 双 Token 对
    */
-  private generateTokenPair(user: { id: number; username: string; role: string }) {
+  private generateTokenPair(user: {
+    id: number;
+    username: string;
+    role: string;
+  }) {
     const payload = { sub: user.id, username: user.username, role: user.role };
 
     const access_token = this.jwtService.sign(payload, {
@@ -48,9 +52,11 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
-  async register(
-    registerDto: RegisterDto,
-  ): Promise<{ user: Partial<User>; access_token: string; refresh_token: string }> {
+  async register(registerDto: RegisterDto): Promise<{
+    user: Partial<User>;
+    access_token: string;
+    refresh_token: string;
+  }> {
     const { username, password, role, nickname, phone } = registerDto;
 
     // 检查用户名是否已存在
@@ -82,9 +88,11 @@ export class AuthService {
     };
   }
 
-  async login(
-    loginDto: LoginDto,
-  ): Promise<{ user: Partial<User>; access_token: string; refresh_token: string }> {
+  async login(loginDto: LoginDto): Promise<{
+    user: Partial<User>;
+    access_token: string;
+    refresh_token: string;
+  }> {
     const { username, password } = loginDto;
 
     // 查找用户
@@ -117,7 +125,10 @@ export class AuthService {
     refreshToken: string,
   ): Promise<{ access_token: string; refresh_token: string }> {
     try {
-      const payload = this.jwtService.verify(refreshToken);
+      /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+      const raw = this.jwtService.verify(refreshToken);
+      const payload: { sub: number; type?: string } = raw;
+      /* eslint-enable @typescript-eslint/no-unsafe-assignment */
 
       // 仅接受 type=refresh 的 token
       if (payload.type !== 'refresh') {

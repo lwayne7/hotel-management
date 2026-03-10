@@ -79,14 +79,21 @@ describe('OrdersService - Concurrency', () => {
         if (entity === RoomInventory) {
           return {
             createQueryBuilder: () => {
-              let isUpdate = false;
               const builder: Record<string, any> = {
-                where: function () { return this; },
-                andWhere: function () { return this; },
-                setLock: function () { return this; },
+                where: function () {
+                  return this;
+                },
+                andWhere: function () {
+                  return this;
+                },
+                setLock: function () {
+                  return this;
+                },
                 getMany: jest.fn().mockResolvedValue([inventoryRow]),
                 // 原子 SQL UPDATE 链
-                update: function () { isUpdate = true; return this; },
+                update: function () {
+                  return this;
+                },
                 set: function (setter: Record<string, any>) {
                   (this as any)._setter = setter;
                   return this;
@@ -101,7 +108,10 @@ describe('OrdersService - Concurrency', () => {
                     if (match) qty = parseInt(match[1], 10);
                   }
                   // 模拟原子 SQL：检查 available >= qty
-                  const available = inventoryRow.total - inventoryRow.reserved - inventoryRow.sold;
+                  const available =
+                    inventoryRow.total -
+                    inventoryRow.reserved -
+                    inventoryRow.sold;
                   if (available >= qty) {
                     inventoryRow.reserved += qty;
                     return { affected: 1 };

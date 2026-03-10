@@ -103,7 +103,7 @@ export class HotelsService {
     private readonly notificationsGateway: NotificationsGateway,
     private readonly priceUpdatesService: PriceUpdatesService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Record<string, any>,
-  ) { }
+  ) {}
 
   /**
    * 主动失效缓存（Cache Aside 模式）。
@@ -111,11 +111,14 @@ export class HotelsService {
    */
   private async invalidateHotelCache(): Promise<void> {
     try {
-      // cache-manager v6: store.clear() 或直接 reset
-      if (typeof this.cacheManager.reset === 'function') {
-        await this.cacheManager.reset();
-      } else if (this.cacheManager.store && typeof (this.cacheManager.store as any).clear === 'function') {
-        await (this.cacheManager.store as any).clear();
+      const cm = this.cacheManager as {
+        reset?: () => Promise<void>;
+        store?: { clear?: () => Promise<void> };
+      };
+      if (typeof cm.reset === 'function') {
+        await cm.reset();
+      } else if (cm.store && typeof cm.store.clear === 'function') {
+        await cm.store.clear();
       }
       this.logger.debug('Hotel cache invalidated');
     } catch (e) {
