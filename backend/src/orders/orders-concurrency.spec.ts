@@ -78,18 +78,39 @@ describe('OrdersService - Concurrency', () => {
         }
         if (entity === RoomInventory) {
           return {
-            createQueryBuilder: () => ({
-              where: function () {
-                return this;
-              },
-              andWhere: function () {
-                return this;
-              },
-              setLock: function () {
-                return this;
-              },
-              getMany: jest.fn().mockResolvedValue([inventoryRow]),
-            }),
+            createQueryBuilder: () => {
+              let isUpdate = false;
+              const builder: Record<string, any> = {
+                where: function () { return this; },
+                andWhere: function () { return this; },
+                setLock: function () { return this; },
+                getMany: jest.fn().mockResolvedValue([inventoryRow]),
+                // 原子 SQL UPDATE 链
+                update: function () { isUpdate = true; return this; },
+                set: function (setter: Record<string, any>) {
+                  (this as any)._setter = setter;
+                  return this;
+                },
+                execute: jest.fn(async () => {
+                  // 从 setter 提取增量值
+                  const setterFn = (builder as any)._setter?.reserved;
+                  let qty = 1;
+                  if (typeof setterFn === 'function') {
+                    const expr = setterFn();
+                    const match = expr.match(/[+-] (\d+)/);
+                    if (match) qty = parseInt(match[1], 10);
+                  }
+                  // 模拟原子 SQL：检查 available >= qty
+                  const available = inventoryRow.total - inventoryRow.reserved - inventoryRow.sold;
+                  if (available >= qty) {
+                    inventoryRow.reserved += qty;
+                    return { affected: 1 };
+                  }
+                  return { affected: 0 };
+                }),
+              };
+              return builder;
+            },
             save: jest.fn(async (rows: RoomInventory[]) => rows),
           };
         }

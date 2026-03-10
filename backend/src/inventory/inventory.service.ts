@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 import { RoomInventory } from './room-inventory.entity';
 
@@ -32,8 +32,11 @@ function eachDateNightsInclusiveStartExclusiveEnd(
 
 @Injectable()
 export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
+
   /**
-   * 预占库存（reserved += qty）。需要在调用方事务内执行。
+   * 预占库存（原子 SQL：UPDATE ... SET reserved = reserved + :qty WHERE available >= :qty）。
+   * 通过 affected rows 判断是否全部成功，失败则由外层事务回滚。
    */
   async reserve(
     manager: EntityManager,
@@ -50,6 +53,8 @@ export class InventoryService {
     if (dates.length === 0) {
       throw new ForbiddenException('入住日期范围不合法');
     }
+
+    // 先验证库存行是否存在
     const repo = manager.getRepository(RoomInventory);
     const qb = repo
       .createQueryBuilder('inv')
@@ -62,21 +67,30 @@ export class InventoryService {
       throw new ForbiddenException('库存未初始化或日期缺失');
     }
 
-    for (const r of rows) {
-      const available = r.total - r.reserved - r.sold;
-      if (available < qty) {
-        throw new ForbiddenException(`库存不足（${r.date} 可用 ${available}）`);
-      }
-    }
+    // 原子 SQL 更新：只更新可用库存 >= qty 的行
+    const result = await repo
+      .createQueryBuilder()
+      .update(RoomInventory)
+      .set({ reserved: () => `reserved + ${qty}` })
+      .where('roomTypeId = :roomTypeId', { roomTypeId })
+      .andWhere('date IN (:...dates)', { dates })
+      .andWhere('(total - reserved - sold) >= :qty', { qty })
+      .execute();
 
-    for (const r of rows) {
-      r.reserved += qty;
+    // 如果受影响行数不等于日期数，说明某些天库存不足
+    if (result.affected !== dates.length) {
+      this.logger.warn(
+        `Reserve partial: affected=${result.affected}, expected=${dates.length}, roomTypeId=${roomTypeId}`,
+      );
+      throw new ForbiddenException(
+        `库存不足（需要 ${dates.length} 天，仅 ${result.affected} 天有足够库存）`,
+      );
     }
-    await repo.save(rows);
   }
 
   /**
-   * 确认成交：reserved -= qty, sold += qty。需要在调用方事务内执行。
+   * 确认成交（原子 SQL：reserved -= qty, sold += qty）。
+   * 只更新 reserved >= qty 的行，确保不会出现负数。
    */
   async commit(
     manager: EntityManager,
@@ -101,22 +115,30 @@ export class InventoryService {
     if (rows.length !== dates.length) {
       throw new ForbiddenException('库存未初始化或日期缺失');
     }
-    for (const r of rows) {
-      if (r.reserved < qty) {
-        throw new ForbiddenException(
-          `预占库存不足（${r.date} reserved=${r.reserved}）`,
-        );
-      }
+
+    // 原子 SQL 更新
+    const result = await repo
+      .createQueryBuilder()
+      .update(RoomInventory)
+      .set({
+        reserved: () => `reserved - ${qty}`,
+        sold: () => `sold + ${qty}`,
+      })
+      .where('roomTypeId = :roomTypeId', { roomTypeId })
+      .andWhere('date IN (:...dates)', { dates })
+      .andWhere('reserved >= :qty', { qty })
+      .execute();
+
+    if (result.affected !== dates.length) {
+      throw new ForbiddenException(
+        `确认成交失败（预占库存不足，affected=${result.affected}）`,
+      );
     }
-    for (const r of rows) {
-      r.reserved -= qty;
-      r.sold += qty;
-    }
-    await repo.save(rows);
   }
 
   /**
-   * 释放预占：reserved -= qty。需要在调用方事务内执行。
+   * 释放预占（原子 SQL：reserved -= qty）。
+   * 只更新 reserved >= qty 的行，确保不会出现负数。
    */
   async release(
     manager: EntityManager,
@@ -140,16 +162,21 @@ export class InventoryService {
     if (rows.length !== dates.length) {
       throw new ForbiddenException('库存未初始化或日期缺失');
     }
-    for (const r of rows) {
-      if (r.reserved < qty) {
-        throw new ForbiddenException(
-          `释放失败（${r.date} reserved=${r.reserved}）`,
-        );
-      }
+
+    // 原子 SQL 更新
+    const result = await manager
+      .createQueryBuilder()
+      .update(RoomInventory)
+      .set({ reserved: () => `reserved - ${qty}` })
+      .where('roomTypeId = :roomTypeId', { roomTypeId })
+      .andWhere('date IN (:...dates)', { dates })
+      .andWhere('reserved >= :qty', { qty })
+      .execute();
+
+    if (result.affected !== dates.length) {
+      throw new ForbiddenException(
+        `释放失败（预占库存不足，affected=${result.affected}）`,
+      );
     }
-    for (const r of rows) {
-      r.reserved -= qty;
-    }
-    await repo.save(rows);
   }
 }

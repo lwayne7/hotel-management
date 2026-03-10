@@ -57,6 +57,7 @@ describe('HotelsService (state machine)', () => {
       ds,
       mockNotificationsGateway,
       mockPriceUpdatesService,
+      { reset: jest.fn(), store: { clear: jest.fn() } } as any,
     );
 
     // 创建测试商户

@@ -1,5 +1,6 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -27,7 +28,8 @@ describe('AuthService', () => {
       'findByUsername' | 'findById' | 'create' | 'existsByUsername'
     >
   >;
-  let mockJwtService: jest.Mocked<Pick<JwtService, 'sign'>>;
+  let mockJwtService: jest.Mocked<Pick<JwtService, 'sign' | 'verify'>>;
+  let mockConfigService: jest.Mocked<Pick<ConfigService, 'get'>>;
 
   /** Auto-increment counter for mock-created users */
   let nextUserId: number;
@@ -44,17 +46,23 @@ describe('AuthService', () => {
 
     mockJwtService = {
       sign: jest.fn().mockReturnValue('mock_token'),
+      verify: jest.fn(),
+    };
+
+    mockConfigService = {
+      get: jest.fn(),
     };
 
     authService = new AuthService(
       mockUsersService as unknown as UsersService,
       mockJwtService as unknown as JwtService,
+      mockConfigService as unknown as ConfigService,
     );
   });
 
   // ============ register ============
   describe('register', () => {
-    it('should create a new user with hashed password and return JWT token', async () => {
+    it('should create a new user with hashed password and return dual tokens', async () => {
       mockUsersService.existsByUsername.mockResolvedValue(false);
       mockUsersService.create.mockImplementation(async (userData: Partial<User>) =>
         buildMockUser(userData, nextUserId++),
@@ -82,15 +90,25 @@ describe('AuthService', () => {
       const isHashed = await bcrypt.compare('Password123', hashedPassword);
       expect(isHashed).toBe(true);
 
-      // Should sign JWT with correct payload
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: expect.any(Number) as number,
-        username: 'merchant001',
-        role: UserRole.MERCHANT,
-      });
+      // Should sign JWT twice: access_token + refresh_token
+      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
 
-      // Should return token and user without password
+      // First call: access_token with user payload and 15m expiry
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
+        { sub: expect.any(Number) as number, username: 'merchant001', role: UserRole.MERCHANT },
+        { expiresIn: '15m' },
+      );
+      // Second call: refresh_token with type=refresh and 7d expiry
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        2,
+        { sub: expect.any(Number) as number, type: 'refresh' },
+        { expiresIn: '7d' },
+      );
+
+      // Should return both tokens and user without password
       expect(result.access_token).toBe('mock_token');
+      expect(result.refresh_token).toBe('mock_token');
       expect(result.user).toBeDefined();
       expect(result.user).not.toHaveProperty('password');
       expect(result.user.username).toBe('merchant001');
@@ -124,8 +142,12 @@ describe('AuthService', () => {
       });
 
       expect(result.access_token).toBe('mock_token');
-      expect(mockJwtService.sign).toHaveBeenCalledWith(
+      expect(result.refresh_token).toBe('mock_token');
+      // access_token sign should contain the correct role
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({ role: UserRole.MERCHANT }),
+        expect.any(Object),
       );
     });
 
@@ -142,8 +164,11 @@ describe('AuthService', () => {
       });
 
       expect(result.access_token).toBe('mock_token');
-      expect(mockJwtService.sign).toHaveBeenCalledWith(
+      expect(result.refresh_token).toBe('mock_token');
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({ role: UserRole.CUSTOMER }),
+        expect.any(Object),
       );
     });
   });
@@ -152,7 +177,7 @@ describe('AuthService', () => {
   describe('login', () => {
     const HASHED_PASSWORD = bcrypt.hashSync('Password123', 10);
 
-    it('should return JWT token for valid credentials', async () => {
+    it('should return dual tokens for valid credentials', async () => {
       mockUsersService.findByUsername.mockResolvedValue({
         id: 1,
         username: 'merchant001',
@@ -167,12 +192,15 @@ describe('AuthService', () => {
         password: 'Password123',
       });
 
-      expect(mockJwtService.sign).toHaveBeenCalledWith({
-        sub: 1,
-        username: 'merchant001',
-        role: UserRole.MERCHANT,
-      });
+      // Should sign twice: access + refresh
+      expect(mockJwtService.sign).toHaveBeenCalledTimes(2);
+      expect(mockJwtService.sign).toHaveBeenNthCalledWith(
+        1,
+        { sub: 1, username: 'merchant001', role: UserRole.MERCHANT },
+        { expiresIn: '15m' },
+      );
       expect(result.access_token).toBe('mock_token');
+      expect(result.refresh_token).toBe('mock_token');
       expect(result.user).toBeDefined();
       expect(result.user).not.toHaveProperty('password');
     });
@@ -207,6 +235,56 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
 
       expect(mockJwtService.sign).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============ refreshToken ============
+  describe('refreshToken', () => {
+    it('should return new token pair for valid refresh token', async () => {
+      mockJwtService.verify.mockReturnValue({ sub: 1, type: 'refresh' });
+      mockUsersService.findById.mockResolvedValue({
+        id: 1,
+        username: 'merchant001',
+        role: UserRole.MERCHANT,
+      } as User);
+
+      const result = await authService.refreshToken('valid_refresh_token');
+
+      expect(mockJwtService.verify).toHaveBeenCalledWith('valid_refresh_token');
+      expect(result.access_token).toBe('mock_token');
+      expect(result.refresh_token).toBe('mock_token');
+    });
+
+    it('should reject access token used as refresh token', async () => {
+      mockJwtService.verify.mockReturnValue({
+        sub: 1,
+        username: 'merchant001',
+        role: UserRole.MERCHANT,
+        // No type: 'refresh' — this is an access token
+      });
+
+      await expect(
+        authService.refreshToken('access_token_not_refresh'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should reject if user no longer exists', async () => {
+      mockJwtService.verify.mockReturnValue({ sub: 999, type: 'refresh' });
+      mockUsersService.findById.mockResolvedValue(null);
+
+      await expect(
+        authService.refreshToken('valid_but_user_deleted'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should reject expired/invalid token', async () => {
+      mockJwtService.verify.mockImplementation(() => {
+        throw new Error('jwt expired');
+      });
+
+      await expect(
+        authService.refreshToken('expired_token'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

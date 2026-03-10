@@ -1,8 +1,11 @@
 import {
   Injectable,
+  Inject,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Hotel, HotelStatus } from './entities/hotel.entity';
@@ -87,6 +90,8 @@ function ensureCoverImage(hotel: HotelWithCover): void {
 
 @Injectable()
 export class HotelsService {
+  private readonly logger = new Logger(HotelsService.name);
+
   constructor(
     @InjectRepository(Hotel)
     private hotelsRepository: Repository<Hotel>,
@@ -97,7 +102,26 @@ export class HotelsService {
     private readonly dataSource: DataSource,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly priceUpdatesService: PriceUpdatesService,
-  ) {}
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Record<string, any>,
+  ) { }
+
+  /**
+   * 主动失效缓存（Cache Aside 模式）。
+   * CacheInterceptor 使用请求 URL 作为缓存键，这里清除所有缓存确保一致性。
+   */
+  private async invalidateHotelCache(): Promise<void> {
+    try {
+      // cache-manager v6: store.clear() 或直接 reset
+      if (typeof this.cacheManager.reset === 'function') {
+        await this.cacheManager.reset();
+      } else if (this.cacheManager.store && typeof (this.cacheManager.store as any).clear === 'function') {
+        await (this.cacheManager.store as any).clear();
+      }
+      this.logger.debug('Hotel cache invalidated');
+    } catch (e) {
+      this.logger.warn('Failed to invalidate cache', e);
+    }
+  }
 
   private normalizeHotel(hotel: Hotel): Hotel {
     if (Array.isArray(hotel.roomTypes)) sortRoomTypesByPrice(hotel.roomTypes);
@@ -307,6 +331,9 @@ export class HotelsService {
       this.priceUpdatesService.emit('hotel_updated', id);
     }
 
+    // 缓存主动失效（Cache Aside）
+    await this.invalidateHotelCache();
+
     return this.findOne(id);
   }
 
@@ -418,6 +445,7 @@ export class HotelsService {
       targetUserId: saved.merchantId,
     });
     this.priceUpdatesService.emit('hotel_online', saved.id);
+    await this.invalidateHotelCache();
     return this.normalizeHotel(saved);
   }
 
@@ -440,6 +468,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetUserId: saved.merchantId,
     });
+    await this.invalidateHotelCache();
     return this.normalizeHotel(saved);
   }
 
@@ -462,6 +491,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetUserId: saved.merchantId,
     });
+    await this.invalidateHotelCache();
     return this.normalizeHotel(saved);
   }
 
@@ -484,6 +514,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetUserId: saved.merchantId,
     });
+    await this.invalidateHotelCache();
     return this.normalizeHotel(saved);
   }
 

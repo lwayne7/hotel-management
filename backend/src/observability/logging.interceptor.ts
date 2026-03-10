@@ -14,7 +14,7 @@ type RequestWithContext = Request & {
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(private readonly metricsService: MetricsService) {}
+  constructor(private readonly metricsService: MetricsService) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const now = Date.now();
@@ -46,6 +46,7 @@ export class LoggingInterceptor implements NestInterceptor {
               originalUrl,
               statusCode,
               durationMs: duration,
+              userId: (req as any).user?.id ?? null,
             }),
           );
         }

@@ -21,9 +21,7 @@ import { UsersModule } from '../users/users.module';
         }
         return {
           secret,
-          signOptions: {
-            expiresIn: 604800, // 7 days in seconds
-          },
+          signOptions: {},
         };
       },
       inject: [ConfigService],
@@ -33,4 +31,4 @@ import { UsersModule } from '../users/users.module';
   providers: [AuthService, JwtStrategy, RolesGuard],
   exports: [AuthService, JwtStrategy, RolesGuard, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }

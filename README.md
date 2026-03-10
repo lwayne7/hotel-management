@@ -14,9 +14,11 @@
 | 📈 **SSE 价格流** | RxJS Subject + interval 合并流，30s keepalive，H5 端实时感知并在重连后走 REST 对齐 |
 | 🧾 **预订闭环（订单+库存）** | 用户端下单/取消/查询，日历库存 `total/reserved/sold` + 事务化 reserve/commit/release，演示“防超卖”与状态机约束 |
 | 🔁 **支付回调幂等** | `PaymentEvent(eventId)` 唯一约束，重复/乱序回调不会二次扣库存或重复迁移订单状态 |
-| 🔐 **JWT + RBAC + 安全加固** | Passport.js 认证、RolesGuard 鉴权、bcrypt 密码哈希；注册接口白名单限制角色（禁止自注册 admin）；JWT Secret 启动校验（无 fallback）；JWT 解析后从 DB 取角色，防篡改 |
+| 🔐 **JWT 双 Token + RBAC** | access_token（15min）+ refresh_token（7d）双 Token 机制；Passport.js 认证、RolesGuard 鉴权、bcrypt 密码哈希；注册接口白名单限制角色；JWT 解析后从 DB 取角色，防篡改 |
 | 🛡️ **支付签名校验** | HMAC-SHA256 签名守护 + 5 分钟时间窗口防重放 + timing-safe 比较，拒绝伪造回调 |
-| ⚡ **缓存层** | `@nestjs/cache-manager` 内存缓存，公开酒店列表 15s / 详情 30s TTL，减少 DB 查询 |
+| ⚡ **缓存层 + 主动失效** | `@nestjs/cache-manager` 内存缓存，公开酒店列表 15s / 详情 30s TTL；写操作后主动清除缓存（Cache Aside 模式），保证数据一致性 |
+| 🛡️ **全局统一异常过滤器** | `AllExceptionsFilter` 统一错误响应格式 `{ statusCode, message, error, requestId, timestamp }`；业务异常保留原始状态，系统异常不暴露内部细节 |
+| 🔧 **原子化库存操作** | 库存 reserve/commit/release 使用原子 SQL `UPDATE ... WHERE available >= :qty`，通过 affected rows 判断成败，避免 TOCTOU 竞态 |
 | ⏰ **订单自动过期** | `@nestjs/schedule` 每分钟扫描过期订单，自动释放库存（reserve → release），防止恶意占房 |
 | 🗂️ **万级种子数据** | 一键生成 10 000 家酒店 × 50 城市 × 5 星级 × 150+ 张 Unsplash 高质量图片 |
 | 📝 **Swagger 文档** | 自动生成 OpenAPI 文档，开箱即用 |
@@ -42,10 +44,12 @@
 - **支付回调幂等与乱序安全**：`PaymentEvent(eventId)` 唯一约束 + HMAC-SHA256 签名校验 + 5 分钟时间窗口防重放，拒绝伪造/重复回调。
 - **实时链路设计**：公开端用 SSE 推价格变更流，管理端用 WebSocket + JWT 握手推审核/订单结果，小程序/RN 端用轮询兜底。
 - **可观测性与排障**：`/metrics` + `/healthz` + 结构化日志（`requestId`），可以从告警一路追到具体请求与 SQL。
-- **安全纵深**：注册角色白名单 + JWT Secret 启动校验 + DB 角色优先 + Helmet 安全头 + 分级限流 + ValidationPipe 白名单 + TypeORM 参数化 + AuditLog 审计。
+- **安全纵深**：注册角色白名单 + JWT Secret 启动校验 + DB 角色优先 + Helmet 安全头 + 分级限流 + ValidationPipe 白名单 + TypeORM 参数化 + AuditLog 审计 + 双 Token 认证。
+- **缓存一致性**：Cache Aside 模式，写操作后主动失效缓存，避免返回过期数据。
+- **异常统一处理**：`AllExceptionsFilter` 统一错误响应格式，业务异常保留状态码，系统异常不暴露内部细节。
 - **缓存与索引**：`@nestjs/cache-manager` 内存缓存热点查询 + 关键实体复合索引 + TypeORM 迁移体系，读写性能兼顾。
 - **容器化部署**：多阶段 Docker 构建 + docker-compose 编排（PostgreSQL + Redis + NestJS + Nginx），一键部署生产环境。
-- **测试与 CI**：后端单测（审核状态机全覆盖 + 订单/支付幂等 + 并发争抢）+ E2E + 前端 Redux 单测；GitHub Actions CI（Lint + TypeCheck + Test + Build + Docker 校验）。TypeScript `strict: true`。
+- **测试与 CI**：后端单测（审核状态机全覆盖 + 订单/支付幂等 + 并发争抢 + DTO 验证）+ E2E + 前端 Redux 单测；GitHub Actions CI。TypeScript `strict: true`。
 - **补充材料**：`backend/contract` 提供 OpenAPI 片段，`backend/perf` 提供 k6 压测脚本，方便演示接口契约与容量评估思路。
 
 ---

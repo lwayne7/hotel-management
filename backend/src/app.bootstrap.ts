@@ -3,6 +3,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { LoggingInterceptor } from './observability/logging.interceptor';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
 function configureCors(app: INestApplication) {
   const isProd = process.env.NODE_ENV === 'production';
@@ -10,19 +11,19 @@ function configureCors(app: INestApplication) {
   app.enableCors({
     origin: isProd
       ? (
-          origin: string | undefined,
-          callback: (err: Error | null, allow?: boolean) => void,
-        ) => {
-          const allowed =
-            !origin ||
-            /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-            /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(
-              origin,
-            ) ||
-            /^https:\/\/.*\.vercel\.app$/.test(origin) ||
-            /^https:\/\/servicewechat\.com$/.test(origin);
-          callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
-        }
+        origin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void,
+      ) => {
+        const allowed =
+          !origin ||
+          /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+          /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+):(10086|5173|3001)$/.test(
+            origin,
+          ) ||
+          /^https:\/\/.*\.vercel\.app$/.test(origin) ||
+          /^https:\/\/servicewechat\.com$/.test(origin);
+        callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+      }
       : true,
     credentials: true,
   });
@@ -59,6 +60,7 @@ export function configureApp(
     }),
   );
   app.useGlobalInterceptors(app.get(LoggingInterceptor));
+  app.useGlobalFilters(new AllExceptionsFilter());
   configureCors(app);
 
   if (options?.swagger) {
