@@ -106,21 +106,54 @@ export class HotelsService {
   ) {}
 
   /**
-   * 主动失效缓存（Cache Aside 模式）。
-   * CacheInterceptor 使用请求 URL 作为缓存键，这里清除所有缓存确保一致性。
+   * 按 key 前缀主动失效酒店相关缓存（Cache Aside 模式）。
+   * NestJS CacheInterceptor 使用请求 URL 作为缓存键，
+   * 这里按 URL 前缀匹配删除相关条目，避免 reset() 误伤其他模块缓存。
    */
-  private async invalidateHotelCache(): Promise<void> {
+  private async invalidateHotelCache(hotelId?: number): Promise<void> {
     try {
       const cm = this.cacheManager as {
+        del?: (key: string) => Promise<void>;
+        store?: {
+          keys?: (pattern?: string) => Promise<string[]>;
+          del?: (key: string) => Promise<void>;
+        };
         reset?: () => Promise<void>;
-        store?: { clear?: () => Promise<void> };
       };
+
+      // 策略一：store 支持 keys 扫描时，按前缀精确删除
+      if (cm.store?.keys && cm.store?.del) {
+        const allKeys = await cm.store.keys();
+        const prefixes = ['/api/v1/public/hotels', '/api/v1/hotels', '/api/v1/admin'];
+        const keysToDelete = allKeys.filter((key) =>
+          prefixes.some((prefix) => key.startsWith(prefix)),
+        );
+        if (hotelId && cm.del) {
+          await cm.del(`/api/v1/public/hotels/${hotelId}`);
+        }
+        await Promise.all(keysToDelete.map((key) => cm.store!.del!(key)));
+        this.logger.debug(`Hotel cache invalidated: ${keysToDelete.length} keys removed`);
+        return;
+      }
+
+      // 策略二：删除已知的固定 key
+      if (cm.del) {
+        const fixedKeys = [
+          '/api/v1/public/hotels',
+          '/api/v1/admin/statistics',
+          '/api/v1/hotels/statistics',
+        ];
+        if (hotelId) fixedKeys.push(`/api/v1/public/hotels/${hotelId}`);
+        await Promise.all(fixedKeys.map((key) => cm.del!(key)));
+        this.logger.debug(`Hotel cache invalidated: ${fixedKeys.length} fixed keys`);
+        return;
+      }
+
+      // 降级：全量清除
       if (typeof cm.reset === 'function') {
         await cm.reset();
-      } else if (cm.store && typeof cm.store.clear === 'function') {
-        await cm.store.clear();
+        this.logger.warn('Hotel cache: fallback to full reset (store does not support keys/del)');
       }
-      this.logger.debug('Hotel cache invalidated');
     } catch (e) {
       this.logger.warn('Failed to invalidate cache', e);
     }
@@ -335,7 +368,7 @@ export class HotelsService {
     }
 
     // 缓存主动失效（Cache Aside）
-    await this.invalidateHotelCache();
+    await this.invalidateHotelCache(id);
 
     return this.findOne(id);
   }
@@ -448,7 +481,7 @@ export class HotelsService {
       targetUserId: saved.merchantId,
     });
     this.priceUpdatesService.emit('hotel_online', saved.id);
-    await this.invalidateHotelCache();
+    await this.invalidateHotelCache(id);
     return this.normalizeHotel(saved);
   }
 
@@ -471,7 +504,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetUserId: saved.merchantId,
     });
-    await this.invalidateHotelCache();
+    await this.invalidateHotelCache(id);
     return this.normalizeHotel(saved);
   }
 
@@ -494,7 +527,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetUserId: saved.merchantId,
     });
-    await this.invalidateHotelCache();
+    await this.invalidateHotelCache(id);
     return this.normalizeHotel(saved);
   }
 
@@ -517,7 +550,7 @@ export class HotelsService {
       timestamp: Date.now(),
       targetUserId: saved.merchantId,
     });
-    await this.invalidateHotelCache();
+    await this.invalidateHotelCache(id);
     return this.normalizeHotel(saved);
   }
 

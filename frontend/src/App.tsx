@@ -1,17 +1,29 @@
 import { Provider } from 'react-redux';
 import { RouterProvider } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import zhCN from 'antd/locale/zh_CN';
 import { theme as antdTheme } from 'antd';
 import { store } from './store';
 import router from './router';
 import ErrorBoundary from './components/ErrorBoundary';
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 function App() {
   return (
     <ErrorBoundary>
-      <Provider store={store}>
-        <ConfigProvider
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <ConfigProvider
           locale={zhCN}
           theme={{
             algorithm: antdTheme.defaultAlgorithm,
@@ -52,7 +64,8 @@ function App() {
         >
           <RouterProvider router={router} />
         </ConfigProvider>
-      </Provider>
+        </Provider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

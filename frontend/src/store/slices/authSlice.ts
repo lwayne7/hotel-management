@@ -38,13 +38,15 @@ const initialState: AuthState = {
 };
 
 /** 将 token / user 持久化到 localStorage */
-function persistAuth(token: string, user: object) {
+function persistAuth(token: string, refreshToken: string, user: object) {
   localStorage.setItem('token', token);
+  localStorage.setItem('refreshToken', refreshToken);
   localStorage.setItem('user', JSON.stringify(user));
 }
 
 function clearAuth() {
   localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
 }
 
@@ -53,7 +55,7 @@ export const login = createAsyncThunk<AuthResponse, LoginParams, { rejectValue: 
   async (params, { rejectWithValue }) => {
     try {
       const response = await authApi.login(params);
-      persistAuth(response.access_token, response.user);
+      persistAuth(response.access_token, response.refresh_token, response.user);
       return response;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error, '登录失败'));
@@ -66,7 +68,7 @@ export const register = createAsyncThunk<AuthResponse, RegisterParams, { rejectV
   async (params, { rejectWithValue }) => {
     try {
       const response = await authApi.register(params);
-      persistAuth(response.access_token, response.user);
+      persistAuth(response.access_token, response.refresh_token, response.user);
       return response;
     } catch (error: unknown) {
       return rejectWithValue(getApiErrorMessage(error, '注册失败'));

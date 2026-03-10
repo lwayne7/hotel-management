@@ -1,54 +1,29 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { Card, Row, Col, Statistic, Typography, Spin } from 'antd';
 import { ShopOutlined, AuditOutlined, CheckCircleOutlined, ClockCircleOutlined, StopOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useQuery } from '@tanstack/react-query';
 import { useAppSelector } from '../../store/hooks';
 import { hotelApi } from '../../services/api';
 import './index.css';
 
 const { Title, Paragraph } = Typography;
 
-interface MerchantStats {
-  total: number;
-  pending: number;
-  approved: number;
-  rejected: number;
-  draft: number;
-}
-
-interface AdminStats {
-  total: number;
-  pending: number;
-  approved: number;
-  rejected: number;
-  offline: number;
-}
-
 const Home: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const [loading, setLoading] = useState(true);
-  const [merchantStats, setMerchantStats] = useState<MerchantStats | null>(null);
-  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
 
-  const loadStatistics = useCallback(async () => {
-    try {
-      setLoading(true);
-      if (user?.role === 'merchant') {
-        const stats = await hotelApi.getMerchantStatistics();
-        setMerchantStats(stats);
-      } else if (user?.role === 'admin') {
-        const stats = await hotelApi.getAdminStatistics();
-        setAdminStats(stats);
-      }
-    } catch (error) {
-      console.error('获取统计数据失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.role]);
+  const { data: merchantStats, isLoading: merchantLoading } = useQuery({
+    queryKey: ['merchant-statistics'],
+    queryFn: () => hotelApi.getMerchantStatistics(),
+    enabled: user?.role === 'merchant',
+  });
 
-  useEffect(() => {
-    void loadStatistics();
-  }, [loadStatistics]);
+  const { data: adminStats, isLoading: adminLoading } = useQuery({
+    queryKey: ['admin-statistics'],
+    queryFn: () => hotelApi.getAdminStatistics(),
+    enabled: user?.role === 'admin',
+  });
+
+  const loading = merchantLoading || adminLoading;
 
   return (
     <div className="home-page">

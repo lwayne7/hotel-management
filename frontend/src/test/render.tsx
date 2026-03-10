@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import authReducer from '../store/slices/authSlice';
 import hotelReducer from '../store/slices/hotelSlice';
 
@@ -34,12 +35,17 @@ export function renderWithProviders(
   options: RenderOptions = {},
 ) {
   const { route = '/', store = createTestStore() } = options;
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
   function Wrapper({ children }: PropsWithChildren) {
     return (
-      <Provider store={store}>
-        <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
-      </Provider>
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+        </Provider>
+      </QueryClientProvider>
     );
   }
 

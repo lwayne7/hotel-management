@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   Button,
@@ -27,7 +27,8 @@ import {
   EyeOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
-import { hotelApi, type HotelListResult, type HotelListParams } from '../../../services/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { hotelApi, type HotelListParams } from '../../../services/api';
 import type { Hotel, HotelStatus, HotelImage, RoomType } from '../../../types/hotel';
 import { getApiErrorMessage, isFormValidationError } from '../../../utils/error';
 import dayjs from 'dayjs';
@@ -38,11 +39,12 @@ const { TextArea } = Input;
 
 type AdminFilterStatus = HotelStatus | 'all';
 
-interface PaginationState {
-  page: number;
-  pageSize: number;
-  total: number;
-}
+// Query key factory（与移动端 hotelKeys 模式一致）
+const adminHotelKeys = {
+  all: () => ['admin-hotels'] as const,
+  list: (params: { status?: string; page: number; pageSize: number }) =>
+    [...adminHotelKeys.all(), 'list', params] as const,
+};
 
 const statusConfig: Record<HotelStatus, { color: string; text: string }> = {
   draft: { color: 'default', text: '草稿' },
@@ -53,10 +55,9 @@ const statusConfig: Record<HotelStatus, { color: string; text: string }> = {
 };
 
 const ReviewList: React.FC = () => {
-  const [hotels, setHotels] = useState<Hotel[]>([]);
-  const [loading, setLoading] = useState(false);
   const [activeStatus, setActiveStatus] = useState<AdminFilterStatus>('pending');
-  const [pagination, setPagination] = useState<PaginationState>({ page: 1, pageSize: 10, total: 0 });
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [detailModal, setDetailModal] = useState<{ visible: boolean; hotel: Hotel | null }>({
     visible: false,
     hotel: null,
@@ -66,71 +67,68 @@ const ReviewList: React.FC = () => {
     hotelId: null,
   });
   const [rejectForm] = Form.useForm<{ reason: string }>();
+  const queryClient = useQueryClient();
 
-  const loadHotels = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: HotelListParams = { page: pagination.page, pageSize: pagination.pageSize };
-      if (activeStatus !== 'all') {
-        params.status = activeStatus;
-      }
-      const response: HotelListResult = await hotelApi.getPendingHotels(params);
-      setHotels(response.data);
-      setPagination((prev) => ({ ...prev, total: response.total }));
-    } catch (error: unknown) {
-      message.error(getApiErrorMessage(error, '加载失败'));
-    } finally {
-      setLoading(false);
-    }
-  }, [activeStatus, pagination.page, pagination.pageSize]);
-
-  useEffect(() => {
-    void loadHotels();
-  }, [loadHotels]);
-
-  const handleApprove = async (id: number) => {
-    try {
-      await hotelApi.approveHotel(id);
-      message.success('审核通过');
-      await loadHotels();
-    } catch (error: unknown) {
-      message.error(getApiErrorMessage(error, '操作失败'));
-    }
+  // 用 useQuery 替代手写 loading/error 管理
+  const queryParams = {
+    status: activeStatus === 'all' ? undefined : activeStatus,
+    page,
+    pageSize,
   };
+  const { data, isLoading: loading } = useQuery({
+    queryKey: adminHotelKeys.list(queryParams),
+    queryFn: () => {
+      const params: HotelListParams = { page, pageSize };
+      if (activeStatus !== 'all') params.status = activeStatus;
+      return hotelApi.getPendingHotels(params);
+    },
+  });
+
+  const hotels = data?.data ?? [];
+  const total = data?.total ?? 0;
+
+  const invalidateList = () =>
+    queryClient.invalidateQueries({ queryKey: adminHotelKeys.all() });
+
+  // 用 useMutation 替代手动调用 + reload
+  const approveMutation = useMutation({
+    mutationFn: (id: number) => hotelApi.approveHotel(id),
+    onSuccess: () => { message.success('审核通过'); void invalidateList(); },
+    onError: (error: unknown) => message.error(getApiErrorMessage(error, '操作失败')),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => hotelApi.rejectHotel(id, reason),
+    onSuccess: () => {
+      message.success('已驳回');
+      setRejectModal({ visible: false, hotelId: null });
+      rejectForm.resetFields();
+      void invalidateList();
+    },
+    onError: (error: unknown) => message.error(getApiErrorMessage(error, '操作失败')),
+  });
+
+  const offlineMutation = useMutation({
+    mutationFn: (id: number) => hotelApi.offlineHotel(id),
+    onSuccess: () => { message.success('已下线'); void invalidateList(); },
+    onError: (error: unknown) => message.error(getApiErrorMessage(error, '操作失败')),
+  });
+
+  const onlineMutation = useMutation({
+    mutationFn: (id: number) => hotelApi.onlineHotel(id),
+    onSuccess: () => { message.success('已恢复上线'); void invalidateList(); },
+    onError: (error: unknown) => message.error(getApiErrorMessage(error, '操作失败')),
+  });
 
   const handleReject = async () => {
     if (!rejectModal.hotelId) return;
     try {
       const { reason } = await rejectForm.validateFields();
-      await hotelApi.rejectHotel(rejectModal.hotelId, reason);
-      message.success('已驳回');
-      setRejectModal({ visible: false, hotelId: null });
-      rejectForm.resetFields();
-      await loadHotels();
+      rejectMutation.mutate({ id: rejectModal.hotelId, reason });
     } catch (error: unknown) {
       if (!isFormValidationError(error)) {
         message.error(getApiErrorMessage(error, '操作失败'));
       }
-    }
-  };
-
-  const handleOffline = async (id: number) => {
-    try {
-      await hotelApi.offlineHotel(id);
-      message.success('已下线');
-      await loadHotels();
-    } catch (error: unknown) {
-      message.error(getApiErrorMessage(error, '操作失败'));
-    }
-  };
-
-  const handleOnline = async (id: number) => {
-    try {
-      await hotelApi.onlineHotel(id);
-      message.success('已恢复上线');
-      await loadHotels();
-    } catch (error: unknown) {
-      message.error(getApiErrorMessage(error, '操作失败'));
     }
   };
 
@@ -222,7 +220,7 @@ const ReviewList: React.FC = () => {
                 size="small"
                 icon={<CheckCircleOutlined />}
                 style={{ color: '#52c41a' }}
-                onClick={() => void handleApprove(record.id)}
+                onClick={() => approveMutation.mutate(record.id)}
               >
                 通过
               </Button>
@@ -242,7 +240,7 @@ const ReviewList: React.FC = () => {
               type="link"
               size="small"
               icon={<StopOutlined />}
-              onClick={() => void handleOffline(record.id)}
+              onClick={() => offlineMutation.mutate(record.id)}
             >
               下线
             </Button>
@@ -253,7 +251,7 @@ const ReviewList: React.FC = () => {
               size="small"
               icon={<PlayCircleOutlined />}
               style={{ color: '#52c41a' }}
-              onClick={() => void handleOnline(record.id)}
+              onClick={() => onlineMutation.mutate(record.id)}
             >
               上线
             </Button>
@@ -282,7 +280,7 @@ const ReviewList: React.FC = () => {
         activeKey={activeStatus}
         onChange={(key) => {
           setActiveStatus(key as AdminFilterStatus);
-          setPagination((prev) => ({ ...prev, page: 1 }));
+          setPage(1);
         }}
         items={tabItems}
       />
@@ -294,11 +292,11 @@ const ReviewList: React.FC = () => {
         rowKey="id"
         loading={loading}
         pagination={{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showTotal: (total) => `共 ${total} 条`,
-          onChange: (page) => setPagination((prev) => ({ ...prev, page })),
+          current: page,
+          pageSize,
+          total,
+          showTotal: (t) => `共 ${t} 条`,
+          onChange: (p) => setPage(p),
         }}
       />
 

@@ -24,24 +24,87 @@ api.interceptors.request.use(
   }
 );
 
-// 响应拦截器：处理错误，返回 data
+// ========== JWT 静默刷新 + 并发竞态保护 ==========
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+function processQueue(error: unknown, token: string | null) {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (token) resolve(token);
+    else reject(error);
+  });
+  failedQueue = [];
+}
+
+function clearAuthAndRedirect() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+  localStorage.removeItem('user');
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
+}
+
+// 响应拦截器：处理错误、JWT 静默刷新，返回 data
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     const status = error.response?.status;
-    const requestUrl: string = error.config?.url || '';
-    const isLoginOrRegister =
-      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+    const requestUrl: string = originalRequest?.url || '';
+    const isAuthRequest =
+      requestUrl.includes('/auth/login') ||
+      requestUrl.includes('/auth/register') ||
+      requestUrl.includes('/auth/refresh');
 
-    // 登录/注册失败时不要强制跳转，否则看不到错误提示
-    if (status === 401 && !isLoginOrRegister) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+    // 非 401 或认证相关请求：直接拒绝
+    if (status !== 401 || isAuthRequest || originalRequest._retry) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    // 已有刷新在进行中：将请求加入等待队列
+    if (isRefreshing) {
+      return new Promise<string>((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      }).then((token) => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return api(originalRequest);
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    const storedRefreshToken = localStorage.getItem('refreshToken');
+    if (!storedRefreshToken) {
+      processQueue(error, null);
+      isRefreshing = false;
+      clearAuthAndRedirect();
+      return Promise.reject(error);
+    }
+
+    try {
+      // 静默刷新 token
+      const { access_token, refresh_token } = await authApi.refreshToken(storedRefreshToken);
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
+
+      // 通知队列中的所有等待请求
+      processQueue(null, access_token);
+
+      // 用新 token 重试原始请求
+      originalRequest.headers.Authorization = `Bearer ${access_token}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      clearAuthAndRedirect();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   }
 );
 
@@ -68,11 +131,14 @@ export interface AuthResponse {
     phone?: string;
   };
   access_token: string;
+  refresh_token: string;
 }
 
 export const authApi = {
   login: (params: LoginParams): Promise<AuthResponse> => api.post('/auth/login', params),
   register: (params: RegisterParams): Promise<AuthResponse> => api.post('/auth/register', params),
+  refreshToken: (refreshToken: string): Promise<{ access_token: string; refresh_token: string }> =>
+    api.post('/auth/refresh', { refreshToken }),
 };
 
 // 酒店类型 - 使用共享类型
