@@ -32,12 +32,12 @@
 
 ---
 
-## 📐 架构与关键设计（面试友好）
+## 📐 架构与关键设计
 
 - **架构与关键设计**：[`docs/架构与关键设计.md`](./docs/架构与关键设计.md)
 - **文档中心**：[`docs/README.md`](./docs/README.md)
 
-### 面试快速浏览
+### 关键设计概览
 
 - **防超卖与预订闭环**：`Orders + Inventory + Payments` 模块设计订单状态机与日历库存，保证在并发场景下 `reserved + sold <= total` 恒成立。并发争抢测试验证"最后一间房"场景。
 - **订单自动过期**：`@nestjs/schedule` 每分钟 Cron 扫描，过期未支付订单自动释放库存，防止恶意占房。
@@ -50,7 +50,7 @@
 - **缓存与索引**：`@nestjs/cache-manager` 内存缓存热点查询 + 关键实体复合索引 + TypeORM 迁移体系，读写性能兼顾。
 - **容器化部署**：多阶段 Docker 构建 + docker-compose 编排（PostgreSQL + Redis + NestJS + Nginx），一键部署生产环境。
 - **测试与 CI**：后端单测（审核状态机全覆盖 + 订单/支付幂等 + 并发争抢 + DTO 验证）+ E2E + 前端 Redux 单测；GitHub Actions CI。TypeScript `strict: true`。
-- **补充材料**：`backend/contract` 提供 OpenAPI 片段，`backend/perf` 提供 k6 压测脚本，方便演示接口契约与容量评估思路。
+- **补充材料**：`backend/contract` 提供 OpenAPI 片段，`backend/perf` 提供 k6 压测脚本，用于接口契约与容量评估。
 
 ---
 

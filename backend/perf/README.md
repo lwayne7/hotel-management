@@ -10,7 +10,7 @@ BASE_URL=http://localhost:3000 TOKEN=<customer_jwt> k6 run k6-orders-reserve.js
 BASE_URL=http://localhost:3000 ORDER_ID=<order_id> EVENT_ID=<event_id> k6 run k6-payments-callback.js
 ```
 
-## 面试可讲版本
+## 说明
 
-- 这些脚本不是完整压测平台，而是用来快速证明“我考虑过并发下单和重复回调”的验证材料。
-- 重点不是 QPS 数字本身，而是说明你能把库存保护、幂等处理和压测脚本串成一套闭环。
+- 这些脚本用于验证并发下单场景下的库存保护以及重复回调的幂等处理。
+- 重点关注库存保护、幂等处理与状态机约束的正确性，而非单纯的 QPS 数字。
