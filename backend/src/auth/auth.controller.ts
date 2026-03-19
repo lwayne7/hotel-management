@@ -53,6 +53,16 @@ export class AuthController {
     return this.authService.refreshToken(dto.refreshToken);
   }
 
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '登出（递增 tokenVersion，吊销所有旧 refresh_token）' })
+  @ApiResponse({ status: 204, description: '登出成功' })
+  async logout(@CurrentUser() user: { id: number }) {
+    await this.authService.logout(user.id);
+  }
+
   @Get('profile')
   @UseGuards(AuthGuard('jwt'))
   @ApiBearerAuth()

@@ -31,4 +31,9 @@ export class UsersService {
     const count = await this.usersRepository.count({ where: { username } });
     return count > 0;
   }
+
+  /** 递增 tokenVersion，使该用户所有旧 refresh_token 立即失效 */
+  async incrementTokenVersion(userId: number): Promise<void> {
+    await this.usersRepository.increment({ id: userId }, 'tokenVersion', 1);
+  }
 }

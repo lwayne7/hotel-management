@@ -38,6 +38,10 @@ export class User {
   @Column({ length: 20, nullable: true })
   phone: string;
 
+  /** Token 版本号：登出时递增，使所有旧 refresh_token 失效 */
+  @Column({ default: 0 })
+  tokenVersion: number;
+
   @OneToMany(() => Hotel, (hotel) => hotel.merchant)
   hotels: Hotel[];
 
