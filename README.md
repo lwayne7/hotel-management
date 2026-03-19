@@ -5,30 +5,18 @@
 
 ---
 
-## ✨ 项目亮点
+## ✨ 更适合面试展开的亮点
 
-| 亮点 | 说明 |
-|------|------|
-| 🔄 **完整审核工作流** | DRAFT → PENDING → APPROVED / REJECTED → OFFLINE，覆盖酒店全生命周期 |
-| 📡 **WebSocket 实时通知** | 基于 Socket.IO，商户提交/管理员审核操作秒级推送，按角色精准投递 |
-| 📈 **SSE 价格流** | RxJS Subject + interval 合并流，30s keepalive，H5 端实时感知并在重连后走 REST 对齐 |
-| 🧾 **预订闭环（订单+库存）** | 用户端下单/取消/查询，日历库存 `total/reserved/sold` + 事务化 reserve/commit/release，演示“防超卖”与状态机约束 |
-| 🔁 **支付回调幂等** | `PaymentEvent(eventId)` 唯一约束，重复/乱序回调不会二次扣库存或重复迁移订单状态 |
-| 🔐 **JWT 双 Token + RBAC** | access_token（15min）+ refresh_token（7d）双 Token 机制；Passport.js 认证、RolesGuard 鉴权、bcrypt 密码哈希；注册接口白名单限制角色；JWT 解析后从 DB 取角色，防篡改 |
-| 🛡️ **支付签名校验** | HMAC-SHA256 签名守护 + 5 分钟时间窗口防重放 + timing-safe 比较，拒绝伪造回调 |
-| ⚡ **缓存层 + 主动失效** | `@nestjs/cache-manager` 内存缓存，公开酒店列表 15s / 详情 30s TTL；写操作后主动清除缓存（Cache Aside 模式），保证数据一致性 |
-| 🛡️ **全局统一异常过滤器** | `AllExceptionsFilter` 统一错误响应格式 `{ statusCode, message, error, requestId, timestamp }`；业务异常保留原始状态，系统异常不暴露内部细节 |
-| 🔧 **原子化库存操作** | 库存 reserve/commit/release 使用原子 SQL `UPDATE ... WHERE available >= :qty`，通过 affected rows 判断成败，避免 TOCTOU 竞态 |
-| ⏰ **订单自动过期** | `@nestjs/schedule` 每分钟扫描过期订单，自动释放库存（reserve → release），防止恶意占房 |
-| 🗂️ **万级种子数据** | 一键生成 10 000 家酒店 × 50 城市 × 5 星级 × 150+ 张 Unsplash 高质量图片 |
-| 📝 **Swagger 文档** | 自动生成 OpenAPI 文档，开箱即用 |
-| 🎨 **企业级 UI** | Ant Design 6 定制主题、深色侧边栏、响应式布局、ErrorBoundary 兜底 |
-| 🛡️ **分级限流** | 全局 60req/min + 登录 5/min + 注册 3/min + 支付回调 30/min，按接口敏感度精细化 |
-| 🐳 **Docker 容器化** | 多阶段构建（Backend + Frontend Nginx）+ docker-compose 一键编排（PostgreSQL + Redis + Backend + Frontend） |
-| 🔢 **API 版本化** | 全局 `/api/v1` 前缀，前后端统一，便于后续平滑升级 |
-| 🗃️ **数据库索引 + 迁移** | 关键实体复合索引（hotel/room_type/order）+ TypeORM CLI 迁移体系 |
-| ✅ **CI + 测试** | GitHub Actions CI（Lint + TypeCheck + Test + Build + Docker 校验）；后端单测 + E2E + 并发争抢测试 + 前端 Redux 单测 |
-| 📊 **可观测性** | Prometheus 指标（QPS / 延迟分布）+ 结构化日志 + 健康检查端点 |
+- **审核状态机和权限边界放在服务端**：`HotelsService` 收敛 `DRAFT → PENDING → APPROVED / REJECTED → OFFLINE`，并在后端同时校验角色、酒店所有权和“审核中不可编辑”，避免只靠前端守卫。
+- **订单、库存与支付回调是一条一致性链路**：`createOrder` 在事务中完成“预占库存 → 创建订单”，库存通过原子 SQL `UPDATE ... WHERE available >= :qty` 防超卖；`PaymentEvent(eventId)` 唯一约束 + 订单终态检查保证回调幂等。
+- **实时链路职责分清**：公开端价格 / 上下线变更走 SSE，商户 / 管理员操作通知走 Socket.IO；审核结果同时触发通知、SSE 事件与缓存失效，保证不同端看到的状态一致。
+- **认证与鉴权不是只做 JWT 登录**：双 Token、RBAC、角色白名单、商户资源所有权校验、支付回调签名校验都落在服务端，能清楚回答“为什么前端守卫不够”。
+- **缓存与可观测性服务于排障**：公开查询使用 Cache Aside，写操作后主动失效；后端同时提供 Prometheus 指标、健康检查和 requestId 结构化日志，便于把问题从告警追到具体请求。
+- **工程化证据完整**：当前本地可复跑 `144` 项自动化测试（后端单测 116 + E2E 2 + 前端 26），并接入 GitHub Actions CI、k6 压测脚本和 Docker 构建校验。
+
+## 🔍 补充能力
+
+- Swagger / OpenAPI 文档、分级限流、统一异常过滤器、容器化部署、万级种子数据生成。
 
 ---
 
@@ -51,6 +39,17 @@
 - **容器化部署**：多阶段 Docker 构建 + docker-compose 编排（PostgreSQL + Redis + NestJS + Nginx），一键部署生产环境。
 - **测试与 CI**：后端单测（审核状态机全覆盖 + 订单/支付幂等 + 并发争抢 + DTO 验证）+ E2E + 前端 Redux 单测；GitHub Actions CI。TypeScript `strict: true`。
 - **补充材料**：`backend/contract` 提供 OpenAPI 片段，`backend/perf` 提供 k6 压测脚本，用于接口契约与容量评估。
+
+---
+
+## ✅ 质量与验证
+
+| 维度 | 当前口径 |
+|------|----------|
+| 自动化测试 | `144` 项（后端单测 116 + 后端 E2E 2 + 前端 26） |
+| CI | `.github/workflows/ci.yml` 自动执行 Lint + TypeCheck + Test + Build + Docker 校验 |
+| 压测 | `backend/perf/k6-orders-reserve.js`、`backend/perf/k6-payments-callback.js` |
+| 可观测性 | `/api/v1/metrics`、`/api/v1/healthz`、requestId 结构化日志 |
 
 ---
 
@@ -133,7 +132,8 @@ hotel-management/
 ```bash
 cd backend
 npm install
-cp .env.example .env        # 编辑数据库连接等
+# 创建 .env.local
+# 最小本地配置只需提供 JWT_SECRET，数据库可直接走 SQLite 默认值
 npm run seed                 # 初始化测试用户 + 20 家精选酒店
 npm run start:dev            # http://localhost:3000
 ```
@@ -233,17 +233,24 @@ npm run update-images     # 更新酒店图片
 
 ---
 
-## 📝 环境变量（后端 `.env`）
+## 📝 环境变量（后端 `.env.local`）
 
 ```env
+JWT_SECRET=your_jwt_secret_key
+DB_TYPE=sqlite
+DB_DATABASE=hotel_management.sqlite
+PORT=3000
+```
+
+使用 PostgreSQL 时可继续补充：
+
+```env
+DB_TYPE=postgres
 DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
 DB_DATABASE=hotel_management
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
-PORT=3000
 ```
 
 ---

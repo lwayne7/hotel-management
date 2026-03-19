@@ -140,9 +140,8 @@
    ```bash
    cd hotel-management/backend
    npm install
-   cp .env.example .env
-   # 编辑 .env 配置 PostgreSQL
-   # 确保 PostgreSQL 已创建 hotel_management 数据库
+   # 创建 .env.local，最小配置只需提供 JWT_SECRET
+   # 如需 PostgreSQL，再补充 DB_HOST / DB_PORT / DB_USERNAME / DB_PASSWORD / DB_DATABASE
    npm run seed
    npm run start:dev
    ```
@@ -157,7 +156,7 @@
 4. **访问系统**
    - 前端：http://localhost:5173
    - 后端：http://localhost:3000
-   - API 文档：http://localhost:3000/api/docs
+   - API 文档：http://localhost:3000/api/v1/docs
    - 测试账号：merchant01 / Test123456
 
 详细步骤请查看 [项目运行指南](./项目运行指南.md)

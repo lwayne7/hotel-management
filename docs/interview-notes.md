@@ -6,7 +6,7 @@
 - **方案设计**：
   - 设计 `RoomInventory(roomTypeId, date, total, reserved, sold)` 日历库存表，对 `(roomTypeId, date)` 做唯一约束
   - 下单时调用 `reserve`：校验 `total - reserved - sold >= rooms`，并在事务内 `reserved += rooms`
-  - 支付成功时调用 `commit`：`reserved -= rooms` 且 `sold += rooms`
+  - 支付回调确认成交时调用 `commit`：`reserved -= rooms` 且 `sold += rooms`
   - 取消/过期时调用 `release`：`reserved -= rooms`
 - **并发与回滚细节**：
   - 在 PostgreSQL 下对库存行使用悲观写锁，保证同一房型同一天只有一个事务能修改
