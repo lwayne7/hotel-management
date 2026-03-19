@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual as cryptoTimingSafeEqual } from 'crypto';
 import { Request } from 'express';
 
 /**
@@ -74,7 +74,6 @@ export class PaymentSignatureGuard implements CanActivate {
   }
 }
 
-/** 固定时间字符串比较 */
 function readHeader(request: Request, name: string): string | null {
   const value = request.headers[name];
   if (typeof value === 'string' && value.trim()) return value;
@@ -83,11 +82,10 @@ function readHeader(request: Request, name: string): string | null {
   return null;
 }
 
+/** 固定时间字符串比较，使用 Node.js 内置 crypto.timingSafeEqual 防止时间侧信道攻击 */
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return cryptoTimingSafeEqual(bufA, bufB);
 }

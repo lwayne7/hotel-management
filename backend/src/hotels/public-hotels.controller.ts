@@ -70,6 +70,13 @@ export class PublicHotelsController {
     type: String,
     description: '热门标签筛选，逗号分隔',
   })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: Number,
+    description:
+      '游标分页：传入上一页最后一条记录的 id，跳过 OFFSET 实现 O(1) 深页查询',
+  })
   async list(
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
@@ -85,6 +92,7 @@ export class PublicHotelsController {
     @Query('hotelFeatures') hotelFeatures?: string,
     @Query('roomFeatures') roomFeatures?: string,
     @Query('tags') tags?: string,
+    @Query('cursor') cursor?: string,
   ) {
     type Filters = Parameters<HotelsService['findApprovedHotels']>[2];
     const filters: NonNullable<Filters> = {};
@@ -124,6 +132,12 @@ export class PublicHotelsController {
         .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
+    if (cursor != null) {
+      const cursorNum = parseInt(cursor, 10);
+      if (!Number.isNaN(cursorNum) && cursorNum > 0) {
+        filters.cursor = cursorNum;
+      }
+    }
 
     const pageNum = parseInt(page ?? '1', 10) || 1;
     const pageSizeNum = parseInt(pageSize ?? '10', 10) || 10;

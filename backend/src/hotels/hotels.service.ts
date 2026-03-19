@@ -609,6 +609,8 @@ export class HotelsService {
       hotelFeatures?: string[];
       roomFeatures?: string[];
       tags?: string[]; // 热门标签筛选
+      // 游标分页：传入 cursor 时忽略 page，按 hotel.id 降序游标查询
+      cursor?: number;
     },
   ) {
     const query = this.hotelsRepository
@@ -616,6 +618,12 @@ export class HotelsService {
       .leftJoinAndSelect('hotel.roomTypes', 'roomTypes')
       .leftJoinAndSelect('hotel.images', 'images')
       .where('hotel.status = :status', { status: HotelStatus.APPROVED });
+
+    // 游标分页：当传入 cursor 时，按 hotel.id 过滤（id < cursor），避免 OFFSET 深页性能退化
+    const useCursor = filters?.cursor != null && filters.cursor > 0;
+    if (useCursor) {
+      query.andWhere('hotel.id < :cursor', { cursor: filters!.cursor });
+    }
 
     // 默认按更新时间排序，但可以根据 sortBy 参数改变
     if (filters?.sortBy === 'price') {
@@ -764,9 +772,10 @@ export class HotelsService {
         .setParameter('maxPrice', filters.maxPrice);
     }
 
-    const total = await query.getCount();
+    // 游标分页时跳过 OFFSET（O(1) 索引 seek），否则使用传统偏移分页
+    const total = useCursor ? undefined : await query.getCount();
     const data = await query
-      .skip((page - 1) * pageSize)
+      .skip(useCursor ? 0 : (page - 1) * pageSize)
       .take(pageSize)
       .getMany();
 
@@ -781,12 +790,20 @@ export class HotelsService {
       };
     });
 
+    // 游标分页返回 nextCursor（最后一条记录的 id），客户端传入 cursor=nextCursor 获取下一页
+    const nextCursor =
+      useCursor && dataWithCover.length === pageSize
+        ? dataWithCover[dataWithCover.length - 1].id
+        : undefined;
+
     return {
       data: dataWithCover,
       page,
       pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
+      ...(total != null
+        ? { total, totalPages: Math.ceil(total / pageSize) }
+        : {}),
+      ...(nextCursor != null ? { nextCursor } : {}),
     };
   }
 
