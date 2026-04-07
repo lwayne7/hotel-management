@@ -14,6 +14,7 @@ function buildMockUser(userData: Partial<User>, id: number): User {
     role: userData.role ?? UserRole.MERCHANT,
     nickname: userData.nickname ?? null,
     phone: userData.phone ?? null,
+    tokenVersion: userData.tokenVersion ?? 0,
     createdAt: new Date(),
     updatedAt: new Date(),
     hotels: [],
@@ -102,7 +103,7 @@ describe('AuthService', () => {
       // Second call: refresh_token with type=refresh and 7d expiry
       expect(mockJwtService.sign).toHaveBeenNthCalledWith(
         2,
-        { sub: expect.any(Number) as number, type: 'refresh' },
+        { sub: expect.any(Number) as number, type: 'refresh', version: 0 },
         { expiresIn: '7d' },
       );
 
@@ -185,6 +186,7 @@ describe('AuthService', () => {
         role: UserRole.MERCHANT,
         nickname: 'Test',
         phone: '13800000000',
+        tokenVersion: 0,
       } as User);
 
       const result = await authService.login({
@@ -225,6 +227,7 @@ describe('AuthService', () => {
         username: 'merchant001',
         password: HASHED_PASSWORD,
         role: UserRole.MERCHANT,
+        tokenVersion: 0,
       } as User);
 
       await expect(
@@ -241,11 +244,16 @@ describe('AuthService', () => {
   // ============ refreshToken ============
   describe('refreshToken', () => {
     it('should return new token pair for valid refresh token', async () => {
-      mockJwtService.verify.mockReturnValue({ sub: 1, type: 'refresh' });
+      mockJwtService.verify.mockReturnValue({
+        sub: 1,
+        type: 'refresh',
+        version: 0,
+      });
       mockUsersService.findById.mockResolvedValue({
         id: 1,
         username: 'merchant001',
         role: UserRole.MERCHANT,
+        tokenVersion: 0,
       } as User);
 
       const result = await authService.refreshToken('valid_refresh_token');
@@ -297,6 +305,7 @@ describe('AuthService', () => {
         role: UserRole.MERCHANT,
         nickname: 'Test',
         phone: '13800000000',
+        tokenVersion: 0,
       } as User;
       mockUsersService.findById.mockResolvedValue(mockUser);
 
