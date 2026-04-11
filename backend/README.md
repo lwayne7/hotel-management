@@ -11,7 +11,7 @@
 - **订单、库存与支付回调是一条一致性链路**：`createOrder` 在事务中完成“预占库存 → 创建订单”，库存通过原子 SQL `UPDATE ... WHERE available >= :qty` 防超卖；`PaymentEvent(eventId)` 唯一约束 + 订单终态检查保证幂等。
 - **实时链路职责分清**：公开端价格 / 上下线变更走 SSE，商户 / 管理员通知走 Socket.IO；审核结果同时触发通知、SSE 事件与缓存失效。
 - **安全不是只做 JWT 登录**：RBAC、角色白名单、商户资源所有权校验、支付回调 HMAC 签名校验和限流都落在服务端。
-- **质量与排障有证据**：当前本地可复跑 `118` 项测试（单测 116 + E2E 2），并提供 k6 压测脚本、Prometheus 指标、健康检查和 requestId 结构化日志。
+- **质量与排障有证据**：当前本地可复跑 `125` 项测试（单测 123 + E2E 2），并提供 k6 压测脚本、Prometheus 指标、健康检查和 requestId 结构化日志。
 
 ## 技术栈
 
@@ -202,7 +202,7 @@ npm run update-images
 
 | 维度 | 当前口径 |
 |------|----------|
-| 自动化测试 | `118` 项（单测 116 + E2E 2） |
+| 自动化测试 | `125` 项（单测 123 + E2E 2） |
 | 构建验证 | `npm run build` |
 | 压测脚本 | `perf/k6-orders-reserve.js`、`perf/k6-payments-callback.js` |
 | 可观测性 | `/api/v1/metrics`、`/api/v1/healthz`、requestId 结构化日志 |

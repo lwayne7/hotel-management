@@ -12,7 +12,7 @@
 - **实时链路职责分清**：公开端价格 / 上下线变更走 SSE，商户 / 管理员操作通知走 Socket.IO；审核结果同时触发通知、SSE 事件与缓存失效，保证不同端看到的状态一致。
 - **认证与鉴权不是只做 JWT 登录**：双 Token、RBAC、角色白名单、商户资源所有权校验、支付回调签名校验都落在服务端，能清楚回答“为什么前端守卫不够”。
 - **缓存与可观测性服务于排障**：公开查询使用 Cache Aside，写操作后主动失效；后端同时提供 Prometheus 指标、健康检查和 requestId 结构化日志，便于把问题从告警追到具体请求。
-- **工程化证据完整**：当前本地可复跑 `144` 项自动化测试（后端单测 116 + E2E 2 + 前端 26），并接入 GitHub Actions CI、k6 压测脚本和 Docker 构建校验。
+- **工程化证据完整**：当前本地可复跑 `151` 项自动化测试（后端单测 123 + E2E 2 + 前端 26），并接入 GitHub Actions CI、k6 压测脚本和 Docker 构建校验。
 
 ## 🔍 补充能力
 
@@ -46,7 +46,7 @@
 
 | 维度 | 当前口径 |
 |------|----------|
-| 自动化测试 | `144` 项（后端单测 116 + 后端 E2E 2 + 前端 26） |
+| 自动化测试 | `151` 项（后端单测 123 + 后端 E2E 2 + 前端 26） |
 | CI | `.github/workflows/ci.yml` 自动执行 Lint + TypeCheck + Test + Build + Docker 校验 |
 | 压测 | `backend/perf/k6-orders-reserve.js`、`backend/perf/k6-payments-callback.js` |
 | 可观测性 | `/api/v1/metrics`、`/api/v1/healthz`、requestId 结构化日志 |
